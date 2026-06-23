@@ -212,18 +212,90 @@ document.addEventListener("click", (e) => {
 /* ==========================================================================
    APLICATIVO: ARQUIVOS
    ========================================================================== */
-function obtenerConteudoArquivos() {
+import { itemsDatabase } from './database/items.js';
+
+function obterConteudoArquivos() {
+    // Busca na base de dados apenas os IDs que foram jogados dentro do gameState
+    const itensDesbloqueados = gameState.unlockedFiles.map(id => itemsDatabase[id]).filter(Boolean);
+
+    let listaHTML = "";
+
+    // Se não houver nada descoberto, mostra a interface inicial de sistema vazio
+    if (itensDesbloqueados.length === 0) {
+        listaHTML = `
+            <div class="arquivos-placeholder" style="padding: 20px; text-align: center; opacity: 0.4;">
+                <iconify-icon icon="pixelarticons:folder-minus" style="font-size: 32px; color: #ff8d8d;"></iconify-icon>
+                <p style="margin-top: 10px; font-size: 11px;">[ SISTEMA DE ARQUIVOS VAZIO ]</p>
+                <span style="font-size: 9px; display: block; line-height: 1.3;">Nenhum documento ou objeto foi escaneado no portão do Observatório hoje.</span>
+            </div>
+        `;
+    } else {
+        // Se houver itens, gera os botões clicáveis na barra lateral esquerda
+        listaHTML = itensDesbloqueados.map(item => `
+            <div class="arquivo-item" data-item-id="${item.id}" style="animation: fadeIn 0.1s ease;">
+                <span>${item.icone} ${item.nome}</span>
+                <small style="display:block; opacity:0.6; font-size:9px; margin-top: 2px;">Tipo: ${item.tipo}</small>
+            </div>
+        `).join("");
+    }
+
     return `
         <div class="arquivos-layout">
-            <div class="arquivos-lista">
-                <div class="arquivos-placeholder">📁 Nenhum arquivo carregado</div>
+            <!-- LISTA ESQUERDA (DIFERENTES ITENS APARECERÃO AQUI) -->
+            <div class="arquivos-lista" id="arquivos-lista" style="border-right: 1px solid #26422c; width: 35%; padding: 10px; overflow-y: auto;">
+                ${listaHTML}
             </div>
-            <div class="arquivos-detalhe">
-                <div class="detalhe-placeholder">Selecione um arquivo para visualizar</div>
+
+            <!-- PAINEL DIREITO (GUIA DE VERIFICAÇÃO TÉCNICA) -->
+            <div class="arquivos-detalhe" id="arquivos-detalhe" style="flex: 1; padding: 12px; overflow-y: auto;">
+                <div class="detalhe-placeholder" style="opacity: 0.5; font-size: 11px; text-align: center; margin-top: 40px;">
+                    <iconify-icon icon="pixelarticons:device-laptop" style="font-size: 24px; display:block; margin: 0 auto 10px;"></iconify-icon>
+                    Aguardando seleção de dados para análise de autenticidade.
+                </div>
             </div>
         </div>
     `;
 }
+
+document.addEventListener("click", (e) => {
+    const itemClick = e.target.closest(".arquivo-item");
+    if (!itemClick) return;
+
+    const itemId = itemClick.dataset.itemId;
+    const itemDados = itemsDatabase[itemId];
+    if (!itemDados) return;
+
+    const painelDetalhe = document.getElementById("arquivos-detalhe");
+    if (!painelDetalhe) return;
+
+    painelDetalhe.innerHTML = `
+        <div class="detalhe-documento" style="animation: fadeIn 0.15s ease;">
+            <div style="display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #26422c; padding-bottom: 12px;">
+                <div style="font-size: 30px; background: #102115; border: 1px solid #26422c; width: 45px; height: 45px; display:flex; align-items:center; justify-content:center;">
+                    ${itemDados.icone}
+                </div>
+                <div>
+                    <h2 style="margin:0; color: #8dff9a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">${itemDados.nome}</h2>
+                    <p style="margin: 3px 0 0 0; opacity: 0.7; font-size: 9px;">Categoria: ${itemDados.tipo}</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <h3 style="color: #8dff9a; font-size: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">PROPRIEDADES / DESCRIÇÃO:</h3>
+                <p style="line-height: 1.4; opacity: 0.8; background: #0f1411; padding: 8px; border: 1px solid #1f2a24; margin:0; font-size: 11px;">
+                    ${itemDados.descricao}
+                </p>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <h3 style="color: #ff8d8d; font-size: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">DIRETRIZES DE VERIFICAÇÃO DO MONITOR:</h3>
+                <div style="line-height: 1.4; opacity: 0.9; background: #1a1010; padding: 8px; border: 1px solid #422626; color: #ffcfe8; white-space: pre-line; font-size: 11px;">
+                    ${itemDados.regrasValidação}
+                </div>
+            </div>
+        </div>
+    `;
+});
 
 /* ==========================================================================
    APLICATIVO: SOLICITAÇÕES
