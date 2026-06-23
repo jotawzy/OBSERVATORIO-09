@@ -62,12 +62,16 @@ function criarJanelaSimples(titulo, conteudo, tipoApp = "emails"){
     janelas[idJanela] = janela;
 
     if (appsFullscreen?.[tipoApp]) {
-        janela.classList.add("fullscreen");
-    } else {
-        janela.style.top = "60px";
-        janela.style.left = "60px";
-        janela.classList.remove("fullscreen");
-    }
+    janela.classList.add("fullscreen");
+    janela.style.top = "0";
+    janela.style.left = "0";
+    janela.style.width = "100%";
+    janela.style.height = "100%";
+} else {
+    janela.classList.remove("fullscreen");
+    janela.style.top = "60px";
+    janela.style.left = "60px";
+}
 
     janela.style.zIndex = zIndex++;
 
@@ -365,10 +369,16 @@ function criarJanelaSolicitacoes(){
 
     const btnFechar = janela.querySelector(".fechar");
 
-    btnFechar.addEventListener("click", () => {
-        janela.remove();
-        delete janelas[idJanela];
-    });
+btnFechar.addEventListener("click", () => {
+
+    janela.remove();
+    delete janelas[idJanela];
+
+    if (taskIcons[idJanela]) {
+        taskIcons[idJanela].remove();
+        delete taskIcons[idJanela];
+    }
+});
 
     criarTaskbarIcone(idJanela, "solicitacoes");
 
