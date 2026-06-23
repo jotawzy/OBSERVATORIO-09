@@ -125,6 +125,8 @@ function ativarDrag(janela, barra){
 
     barra.addEventListener("pointerdown", (e) => {
 
+        if(e.target.tagName === "BUTTON")return;
+
         arrastando = true;
         pointerId = e.pointerId;
 
