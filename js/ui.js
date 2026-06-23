@@ -353,7 +353,6 @@ document.addEventListener("click", (e) => {
 
 // Variáveis de controle locais para o funcionamento do app ativo
 let npcAtual = null;
-let perguntasRestantes = 0;
 
 // 1. Função para sortear 4 a 5 NPCs aleatórios no início do dia
 function iniciarFilaDoDia() {
@@ -369,7 +368,7 @@ function iniciarFilaDoDia() {
 
 // 2. Cria ou abre a janela do aplicativo de solicitações
 function criarJanelaSolicitacoes() {
-    // Se a fila do dia estiver completamente vazia (primeira vez abrindo o app no dia), gera uma nova
+    // Se a fila do dia estiver completamente vazia, gera uma nova
     if (gameState.filaDoDia.length === 0 && gameState.insideObservatory.length === 0 && gameState.rejectedOutside.length === 0) {
         iniciarFilaDoDia();
     }
@@ -377,76 +376,87 @@ function criarJanelaSolicitacoes() {
     const idJanela = criarJanelaSimples("Controle de Acesso - Portão", `
         <div class="solicitacoes-layout" style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
             
-            <!-- MESA DE TRABALHO (ITENS E SPRITE) -->
             <div style="display: flex; flex: 1; min-height: 200px; border-bottom: 1px solid #26422c;">
-                <!-- CANTO ESQUERDO: ITEM TRAZIDO -->
                 <div id="sol-item-container" style="width: 50%; border-right: 1px solid #26422c; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b100c; padding: 10px;">
                     <div id="sol-item-visor" style="font-size: 50px; filter: drop-shadow(0 0 10px rgba(141,255,154,0.2));"></div>
                     <small id="sol-item-nome" style="font-size: 10px; opacity: 0.6; margin-top: 5px; text-align:center;"></small>
                 </div>
                 
-                <!-- CANTO DIREITO: FOTO/SPRITE DO CADASTRADO -->
                 <div style="width: 50%; display: flex; align-items: center; justify-content: center; background: #0f1411; position: relative;">
                     <div id="sol-npc-sprite" style="font-size: 80px; filter: drop-shadow(0 0 15px rgba(141,255,154,0.3)); animation: pulse 2s infinite;">👤</div>
                     <div style="position: absolute; top: 10px; right: 10px; font-size: 10px; background: #1a1010; color: #ff8d8d; padding: 2px 6px; border: 1px solid #422626;" id="sol-badge-status">DESCONHECIDO</div>
                 </div>
             </div>
 
-            <!-- ENVELOPE DE DIÁLOGO E INTERAÇÕES -->
             <div style="background: #0d120e; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <!-- CAIXA DE TEXTO DO DIÁLOGO -->
                 <div id="sol-dialogo-texto" style="font-size: 12px; line-height: 1.4; min-height: 55px; color: #c4ffd0; border-left: 3px solid #385e40; padding-left: 10px; white-space: pre-line;">
                     Aguardando sinal do portão externo...
                 </div>
 
-                <!-- PAINEL DE PERGUNTAS / INVESTIGAÇÃO -->
-                <div id="sol-painel-perguntas" style="display: flex; flex-direction: column; gap: 5px;">
-                    <!-- Botões de perguntas injetados via JS -->
-                </div>
-
-                <!-- BOTÕES DE DECISÃO FINAL -->
-                <div style="display: flex; gap: 10px; margin-top: 5px; border-top: 1px dashed #26422c; padding-top: 10px;">
-                    <button id="btn-liberar-portao" disabled style="flex: 1; background: #15331b; border: 1px solid #385e40; color: #8dff9a; padding: 8px; cursor: not-allowed; text-transform: uppercase; font-weight: bold; font-size: 11px;">Liberar Portão</button>
-                    <button id="btn-mandar-embora" disabled style="flex: 1; background: #331515; border: 1px solid #5e3838; color: #ff8d8d; padding: 8px; cursor: not-allowed; text-transform: uppercase; font-weight: bold; font-size: 11px;">Mandar Embora</button>
-                </div>
+                <div id="sol-painel-interacao" style="display: flex; flex-direction: column; gap: 5px;">
+                    </div>
             </div>
 
         </div>
     `, "solicitacoes");
 
-    // Prepara e joga na tela o primeiro NPC da fila
+    // Prepara e joga na tela o primeiro NPC ou o Terminal caso a fila tenha acabado
     chamarProximoNpc();
 }
 
-// 3. Puxa o próximo NPC da fila e atualiza os elementos visuais na tela
+// 3. Puxa o próximo NPC da fila ou transforma o painel em Terminal de Comando
 function chamarProximoNpc() {
     const proximoId = gameState.filaDoDia[0];
 
-    // Se a fila acabou, limpa a mesa
+    // ==========================================
+    // ESTADO: TURNO TERMINOU -> TRANSMUTA EM TERMINAL
+    // ==========================================
     if (!proximoId) {
-        document.getElementById("sol-npc-sprite").innerText = "❌";
-        document.getElementById("sol-dialogo-texto").innerText = `[ SISTEMA DE CONTROLE ]\nTodos os candidatos da fila de hoje foram processados.\nUse o terminal para encerrar o expediente.`;
-        document.getElementById("sol-item-visor").innerText = "";
-        document.getElementById("sol-item-nome").innerText = "";
-        document.getElementById("sol-painel-perguntas").innerHTML = "";
-        document.getElementById("btn-liberar-portao").disabled = true;
-        document.getElementById("btn-mandar-embora").disabled = true;
+        document.getElementById("sol-npc-sprite").innerText = "🖥️";
+        document.getElementById("sol-badge-status").innerText = "SISTEMA SEGURO";
+        document.getElementById("sol-item-visor").innerText = "⚙️";
+        document.getElementById("sol-item-nome").innerText = "Console Central";
+        
+        document.getElementById("sol-dialogo-texto").innerText = `[ SISTEMA ]\nExpediente de triagem encerrado. Portões magnéticos trancados.\n\nDigite /encerrarturno no terminal abaixo para consolidar os logs de segurança e acessar o mapa da cidade.`;
+
+        const painel = document.getElementById("sol-painel-interacao");
+        painel.innerHTML = `
+            <div style="display: flex; align-items: center; background: #050806; padding: 8px; border: 1px solid #26422c; gap: 5px;">
+                <span style="font-size: 11px; color: #8dff9a; font-family: monospace; white-space: nowrap;">OBSERVATORIO_9_></span>
+                <input type="text" id="terminal-input" placeholder="Digite um comando..." autofocus style="background: transparent; border: none; color: #8dff9a; font-family: monospace; font-size: 11px; outline: none; flex: 1;">
+            </div>
+        `;
+
+        const input = document.getElementById("terminal-input");
+        input.focus();
+        
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const comando = input.value.trim();
+                if (comando === "/encerrarturno") {
+                    document.getElementById("sol-dialogo-texto").innerText = `[ SISTEMA ]\nDesconectando terminal... Deslocando monitor para o alojamento civil da cidade.\n\n(A transição para a cidade iniciará aqui na próxima etapa do projeto!)`;
+                    painel.innerHTML = `<div style="font-size:10px; color:#ff8d8d; text-align:center; padding:5px; font-family: monospace;">[ TERMINAL DESCONECTADO COM SUCESSO ]</div>`;
+                } else {
+                    document.getElementById("sol-dialogo-texto").innerText = `[ ERRO DE DIRETRIZ ]\nComando "${comando}" inválido.\n\nPara prosseguir para os setores externos da cidade, insira exatamente o comando: /encerrarturno`;
+                    input.value = "";
+                }
+            }
+        });
         return;
     }
 
+    // ==========================================
+    // ESTADO: CONFIGURAÇÃO DE NOVO NPC NA FILA
+    // ==========================================
     const npcOriginal = characterDatabase[proximoId];
     npcAtual = { 
         ...npcOriginal, 
-        perguntas: [...npcOriginal.perguntas] // Copia a lista para não apagar do banco de dados original!
+        perguntas: [...npcOriginal.perguntas] // Clona as perguntas para poder ir descartando livremente
     };
-    perguntasRestantes = npcAtual.perguntas.length;
 
-    // Atualiza Foto (Canto Superior Direito)
     document.getElementById("sol-npc-sprite").innerText = npcAtual.sprite;
     document.getElementById("sol-badge-status").innerText = "IDENTIDADE RETIDA";
 
-    // Atualiza Documento/Item (Canto Superior Esquerdo)
-    const itemContainer = document.getElementById("sol-item-container");
     const itemVisor = document.getElementById("sol-item-visor");
     const itemNome = document.getElementById("sol-item-nome");
 
@@ -456,8 +466,6 @@ function chamarProximoNpc() {
         if (dadosItem) {
             itemVisor.innerText = dadosItem.icone;
             itemNome.innerText = `[ ESCANEADO ]\n${dadosItem.nome}`;
-            
-            // AUTOMÁTICO: Ao carregar o item na mesa, ele passa a constar no app de Arquivos
             if (!gameState.unlockedFiles.includes(idItem)) {
                 gameState.unlockedFiles.push(idItem);
             }
@@ -467,97 +475,86 @@ function chamarProximoNpc() {
         itemNome.innerText = "Nenhum documento na bandeja";
     }
 
-    // Atualiza Diálogo Inicial (Embaixo)
     document.getElementById("sol-dialogo-texto").innerText = `"${npcAtual.dialogoInicial}"`;
 
-    // Reseta e bloqueia os botões de decisão até terminar o interrogatório
-    const btnAceitar = document.getElementById("btn-liberar-portao");
-    const btnRecusar = document.getElementById("btn-mandar-embora");
-    btnAceitar.disabled = false;
-    btnAceitar.style.cursor = "pointer";
-    btnRecusar.disabled = false;
-    btnRecusar.style.cursor = "pointer";
-
-    // Gera os botões de perguntas dinamicamente
-    renderizarBotoesPerguntas();
+    // Renderiza o primeiro estado do painel dinâmico (com as duas primeiras perguntas)
+    renderizarPainelDinamico();
 }
 
-// 4. Cria os botões com as perguntas que podem ser feitas
-function renderizarBotoesPerguntas() {
-    const container = document.getElementById("sol-painel-perguntas");
-    container.innerHTML = "";
+// 4. Controla as renderizações com base no repositório de perguntas restante
+function renderizarPainelDinamico() {
+    const painel = document.getElementById("sol-painel-interacao");
+    painel.innerHTML = "";
 
-    if (perguntasRestantes > 0) {
-        npcAtual.perguntas.forEach((pergunta, index) => {
-            const btn = document.createElement("button");
-            btn.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 5px 10px; font-size: 10px; text-align: left; cursor: pointer; transition: 0.1s;";
-            btn.innerText = `💬 ${pergunta.textoBotao}`;
-            
-            // Hover effect simples via JS
-            btn.onmouseover = () => btn.style.background = "#1b2b1f";
-            btn.onmouseout = () => btn.style.background = "#111a13";
+    // Se ainda restarem perguntas em quantidade par (de 2 em 2)
+    if (npcAtual.perguntas && npcAtual.perguntas.length >= 2) {
+        const perguntaA = npcAtual.perguntas[0];
+        const perguntaB = npcAtual.perguntas[1];
 
-            btn.addEventListener("click", () => {
-                // Altera o texto do diálogo com a resposta do NPC
-                document.getElementById("sol-dialogo-texto").innerText = `Você: ${pergunta.textoBotao}\n\nNPC: "${pergunta.respostaNpc}"`;
-                
-                // Remove essa pergunta específica para que não possa ser feita de novo
-                npcAtual.perguntas.splice(index, 1);
-                perguntasRestantes--;
+        const btnA = document.createElement("button");
+        btnA.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 7px 10px; font-size: 11px; text-align: left; cursor: pointer; font-family: monospace;";
+        btnA.innerText = `💬 ${perguntaA.textoBotao}`;
+        btnA.addEventListener("click", () => processarEscolhaPergunta(perguntaA));
 
-                // Atualiza a lista de botões
-                renderizarBotoesPerguntas();
-            });
+        const btnB = document.createElement("button");
+        btnB.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 7px 10px; font-size: 11px; text-align: left; cursor: pointer; font-family: monospace;";
+        btnB.innerText = `💬 ${perguntaB.textoBotao}`;
+        btnB.addEventListener("click", () => processarEscolhaPergunta(perguntaB));
 
-            container.appendChild(btn);
-        });
+        painel.appendChild(btnA);
+        painel.appendChild(btnB);
     } else {
-        // Apenas exibe a mensagem, pois os botões de ação já estão livres
-        container.innerHTML = `<div style="font-size:9px; color:#8dff9a; opacity:0.6; text-align:center; padding: 2px;">[ NÃO HÁ MAIS PERGUNTAS DISPONÍVEIS ]</div>`;
+        // Se as perguntas acabaram completamente, transmuta para os 2 botões de veredito
+        const btnLiberar = document.createElement("button");
+        btnLiberar.style.cssText = "background: #15331b; border: 1px solid #385e40; color: #8dff9a; padding: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; font-size: 11px; font-family: monospace; letter-spacing: 1px;";
+        btnLiberar.innerText = "🔓 Liberar Portão";
+        btnLiberar.addEventListener("click", () => processarDecisaoFinal("liberar"));
+
+        const btnMandarEmbora = document.createElement("button");
+        btnMandarEmbora.style.cssText = "background: #331515; border: 1px solid #5e3838; color: #ff8d8d; padding: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; font-size: 11px; font-family: monospace; letter-spacing: 1px;";
+        btnMandarEmbora.innerText = "❌ Mandar Embora";
+        btnMandarEmbora.addEventListener("click", () => processarDecisaoFinal("recusar"));
+
+        painel.appendChild(btnLiberar);
+        painel.appendChild(btnMandarEmbora);
     }
 }
 
-// 5. Configura e ouve as ações definitivas do jogador (Liberar / Mandar Embora)
-document.addEventListener("click", (e) => {
-    if (!npcAtual) return;
+// 5. Consome o par de perguntas ao clicar e renderiza a resposta e as próximas opções
+function processarEscolhaPergunta(perguntaSelecionada) {
+    // Altera a caixa com a pergunta e a respectiva resposta do NPC
+    document.getElementById("sol-dialogo-texto").innerText = `Você: ${perguntaSelecionada.textoBotao}\n\nNPC: "${perguntaSelecionada.respostaNpc}"`;
 
-    // SE CLICOU EM LIBERAR PORTÃO (ACEITO)
-    if (e.target.id === "btn-liberar-portao") {
-        document.getElementById("sol-dialogo-texto").innerText = `[ PORTÃO ABERTO ]\n\nNPC: "${npcAtual.reacaoAceito}"`;
+    // DESCARTA O PAR INTEIRO: Remove de vez os dois primeiros elementos do repositório
+    npcAtual.perguntas.splice(0, 2);
+
+    // Atualiza a tela de 2 botões (se sobrou outro par, mostra as perguntas; se zerou, mostra Liberar/Mandar)
+    renderizarPainelDinamico();
+}
+
+// 6. Finaliza a tomada de decisão do NPC e roda o tempo de transição da fila
+function processarDecisaoFinal(acao) {
+    const painel = document.getElementById("sol-painel-interacao");
+    painel.innerHTML = ""; // Limpa os dois botões instantaneamente para impedir cliques acidentais
+
+    if (acao === "liberar") {
+        document.getElementById("sol-dialogo-texto").innerText = `[ PORTÃO MAGNETICO ABERTO ]\n\nNPC: "${npcAtual.reacaoAceito}"`;
         
-        // Adiciona à base interna revelando o Nome Real
         gameState.insideObservatory.push({
             id: npcAtual.id,
             nome: npcAtual.nomeReal,
             sprite: npcAtual.sprite,
             seguranca: npcAtual.seguranca
         });
-
-        concluirResolucaoNpc();
-    }
-
-    // SE CLICOU EM MANDAR EMBORA (RECUSADO)
-    if (e.target.id === "btn-mandar-embora") {
-        document.getElementById("sol-dialogo-texto").innerText = `[ ACESSO NEGADO ]\n\nNPC: "${npcAtual.reacaoRecusado}"`;
-        
-        // Adiciona à lista de excluídos lá fora (apenas some do banco ativo)
+    } else {
+        document.getElementById("sol-dialogo-texto").innerText = `[ DIRETRIZ DE ACESSO NEGADA ]\n\nNPC: "${npcAtual.reacaoRecusado}"`;
         gameState.rejectedOutside.push(npcAtual.id);
-
-        concluirResolucaoNpc();
     }
-});
 
-// Remove o NPC processado do topo da fila e aguarda 3 segundos para carregar o próximo
-function concluirResolucaoNpc() {
-    // Bloqueia cliques repetidos nos botões durante a transição
-    document.getElementById("btn-liberar-portao").disabled = true;
-    document.getElementById("btn-mandar-embora").disabled = true;
-    document.getElementById("sol-painel-perguntas").innerHTML = "";
-
-    // Remove do topo do array da fila
+    // Exclui o personagem processado do topo do array da fila
     gameState.filaDoDia.shift(); 
 
-    // Pausa dramática de 3 segundos para o jogador ler o desfecho da fala dele, antes do próximo chegar
+    // Tempo de transição antes do painel ler o próximo elemento da fila (ou inicializar o terminal)
     setTimeout(() => {
         chamarProximoNpc();
     }, 3200);
