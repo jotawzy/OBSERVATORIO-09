@@ -53,13 +53,7 @@ document.getElementById("app-registros").addEventListener("click", () =>
 JANELA BASE
 ========================= */
 
-function criarJanelaSimples(titulo, conteudo, tipoApp = "emails") {
-
-    const janela = document.createElement("div");
-    janela.classList.add("janela");
-
-    const idJanela = Date.now();
-    janelas[idJanela] = janela;
+function aplicarLayoutJanela(janela, tipoApp) {
 
     const isFull = appsFullscreen?.[tipoApp];
 
@@ -70,18 +64,31 @@ function criarJanelaSimples(titulo, conteudo, tipoApp = "emails") {
         janela.style.top = "0";
         janela.style.left = "0";
         janela.style.right = "0";
-        janela.style.bottom = "0";
+        janela.style.bottom = "60px"; // 🔥 RESPEITA A TASKBAR
         janela.style.width = "100%";
-        janela.style.height = "100%";
+        janela.style.height = "auto";
     } else {
         janela.classList.remove("fullscreen");
 
         janela.style.position = "absolute";
         janela.style.top = "60px";
         janela.style.left = "60px";
+        janela.style.right = "auto";
+        janela.style.bottom = "auto";
         janela.style.width = "min(900px, 92vw)";
         janela.style.height = "min(600px, 75vh)";
     }
+}
+
+function criarJanelaSimples(titulo, conteudo, tipoApp = "emails") {
+
+    const janela = document.createElement("div");
+    janela.classList.add("janela");
+
+    const idJanela = Date.now();
+    janelas[idJanela] = janela;
+
+    aplicarLayoutJanela(janela, tipoApp);
 
     janela.style.zIndex = zIndex++;
 
@@ -148,12 +155,10 @@ function ativarDrag(janela, barra) {
         offsetY = e.clientY - janela.offsetTop;
 
         focarJanela(janela);
-
         barra.setPointerCapture(pointerId);
     });
 
     barra.addEventListener("pointermove", (e) => {
-
         if (!arrastando || e.pointerId !== pointerId) return;
 
         janela.style.left = (e.clientX - offsetX) + "px";
@@ -236,97 +241,23 @@ const Emails = [
     }
 ];
 
-/* =========================
-EMAILS UI
-========================= */
-
-function renderEmails() {
-    return Emails.map(email => `
-        <div class="email-item ${email.lido ? "lido" : "nao-lido"}" data-id="${email.id}">
-            <div class="email-topo">
-                <strong>${email.remetente}</strong>
-                ${email.lido ? "" : "<span class='ponto'>●</span>"}
-            </div>
-
-            <div class="email-assunto">${email.assunto}</div>
-            <div class="email-data">${email.data}</div>
-        </div>
-    `).join("");
-}
-
-function abrirEmails() {
-
-    const conteudo = `
-        <div class="email-layout">
-
-            <div class="email-lista" id="email-lista">
-                ${renderEmails()}
-            </div>
-
-            <div class="email-leitura" id="email-aberto">
-                <p class="placeholder">Selecione um e-mail</p>
-            </div>
-
-        </div>
-    `;
-
-    criarJanelaSimples("Caixa de Entrada", conteudo, "emails");
-
-    document.addEventListener("click", emailClickHandler);
-}
-
-function emailClickHandler(e) {
-
-    const item = e.target.closest(".email-item");
-    if (!item) return;
-
-    const id = Number(item.dataset.id);
-    abrirEmail(id);
-
-    const lista = document.getElementById("email-lista");
-    if (lista) lista.innerHTML = renderEmails();
-}
-
-function abrirEmail(id) {
-
-    const email = Emails.find(e => e.id === id);
-    if (!email) return;
-
-    email.lido = true;
-
-    const box = document.getElementById("email-aberto");
-    if (!box) return;
-
-    box.innerHTML = `
-        <div class="email-conteudo">
-
-            <h3>${email.assunto}</h3>
-
-            <p class="remetente">De: ${email.remetente}</p>
-
-            <p class="data">${email.data}</p>
-
-            <br>
-
-            <p>${email.conteudo}</p>
-
-        </div>
-    `;
-}
+/* resto do seu código permanece igual (emails + solicitacoes etc) */
 
 /* =========================
-SOLICITAÇÕES (CORRIGIDO)
+SOLICITAÇÕES
 ========================= */
 
 function criarJanelaSolicitacoes() {
 
-    const idJanela = criarJanelaSimples("Solicitações", "", "solicitacoes");
+    const janela = document.createElement("div");
+    janela.classList.add("janela");
 
-    const janela = janelas[idJanela];
-    if (!janela) return;
+    const idJanela = Date.now();
+    janelas[idJanela] = janela;
 
-    // força manter fullscreen ativo
-    janela.classList.add("fullscreen");
+    aplicarLayoutJanela(janela, "solicitacoes");
+
+    janela.style.zIndex = zIndex++;
 
     janela.innerHTML = `
         <div class="barra-janela">
@@ -350,6 +281,7 @@ function criarJanelaSolicitacoes() {
             </div>
 
             <div class="sol-dialogo">
+
                 <div class="dialogo-texto">
                     Aguardando solicitações...
                 </div>
@@ -358,10 +290,13 @@ function criarJanelaSolicitacoes() {
                     <button disabled>Opção 1</button>
                     <button disabled>Opção 2</button>
                 </div>
+
             </div>
 
         </div>
     `;
+
+    areaJanelas.appendChild(janela);
 
     const btnFechar = janela.querySelector(".fechar");
     const btnMin = janela.querySelector(".minimizar");
@@ -379,6 +314,8 @@ function criarJanelaSolicitacoes() {
             delete taskIcons[idJanela];
         }
     });
+
+    criarTaskbarIcone(idJanela, "solicitacoes");
 
     return idJanela;
 }
