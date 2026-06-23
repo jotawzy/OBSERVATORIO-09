@@ -28,18 +28,16 @@ const appsFullscreen = {
 };
 
 /* =========================
-APPS
+APPS CLICK
 ========================= */
 
-document.getElementById("app-emails").addEventListener("click", () => abrirEmails());
+document.getElementById("app-emails").addEventListener("click", abrirEmails);
 
 document.getElementById("app-arquivos").addEventListener("click", () =>
     criarJanelaSimples("Arquivos", "Em desenvolvimento", "arquivos")
 );
 
-document.getElementById("app-solicitacoes").addEventListener("click", () =>
-    criarJanelaSolicitacoes()
-);
+document.getElementById("app-solicitacoes").addEventListener("click", criarJanelaSolicitacoes);
 
 document.getElementById("app-quadro").addEventListener("click", () =>
     criarJanelaSimples("Quadro", "Em desenvolvimento", "quadro")
@@ -50,7 +48,7 @@ document.getElementById("app-registros").addEventListener("click", () =>
 );
 
 /* =========================
-JANELA BASE
+LAYOUT (FULLSCREEN FIX)
 ========================= */
 
 function aplicarLayoutJanela(janela, tipoApp) {
@@ -64,9 +62,10 @@ function aplicarLayoutJanela(janela, tipoApp) {
         janela.style.top = "0";
         janela.style.left = "0";
         janela.style.right = "0";
-        janela.style.bottom = "60px";
+        janela.style.bottom = "60px"; // 👈 NÃO invade taskbar
         janela.style.width = "auto";
         janela.style.height = "auto";
+
     } else {
         janela.classList.remove("fullscreen");
 
@@ -79,6 +78,10 @@ function aplicarLayoutJanela(janela, tipoApp) {
         janela.style.height = "min(600px, 75vh)";
     }
 }
+
+/* =========================
+JANELA BASE
+========================= */
 
 function criarJanelaSimples(titulo, conteudo, tipoApp = "emails") {
 
@@ -126,14 +129,13 @@ function criarJanelaSimples(titulo, conteudo, tipoApp = "emails") {
     });
 
     criarTaskbarIcone(idJanela, tipoApp);
-
     ativarDrag(janela, janela.querySelector(".barra-janela"));
 
     return idJanela;
 }
 
 /* =========================
-DRAG
+DRAG SYSTEM
 ========================= */
 
 function ativarDrag(janela, barra) {
@@ -145,8 +147,7 @@ function ativarDrag(janela, barra) {
 
     barra.addEventListener("pointerdown", (e) => {
 
-        const botao = e.target.closest("button");
-        if (botao) return;
+        if (e.target.closest("button")) return;
 
         arrastando = true;
         pointerId = e.pointerId;
@@ -198,7 +199,6 @@ function criarTaskbarIcone(id, tipoApp) {
     icon.innerHTML = `<iconify-icon icon="${iconFinal}"></iconify-icon>`;
 
     icon.addEventListener("click", () => {
-
         const janela = janelas[id];
         if (!janela) return;
 
@@ -241,10 +241,79 @@ const Emails = [
     }
 ];
 
-/* resto do seu código permanece igual (emails + solicitacoes etc) */
+/* =========================
+EMAILS OPEN
+========================= */
+
+function abrirEmails() {
+
+    const conteudo = `
+        <div class="email-layout">
+
+            <div class="email-lista" id="email-lista">
+                ${renderEmails()}
+            </div>
+
+            <div class="email-leitura" id="email-aberto">
+                <p class="placeholder">Selecione um e-mail</p>
+            </div>
+
+        </div>
+    `;
+
+    criarJanelaSimples("Caixa de Entrada", conteudo, "emails");
+
+    document.addEventListener("click", emailClickHandler);
+}
+
+function renderEmails() {
+    return Emails.map(email => `
+        <div class="email-item ${email.lido ? "lido" : "nao-lido"}" data-id="${email.id}">
+            <div class="email-topo">
+                <strong>${email.remetente}</strong>
+                ${email.lido ? "" : "<span class='ponto'>●</span>"}
+            </div>
+            <div class="email-assunto">${email.assunto}</div>
+            <div class="email-data">${email.data}</div>
+        </div>
+    `).join("");
+}
+
+function emailClickHandler(e) {
+
+    const item = e.target.closest(".email-item");
+    if (!item) return;
+
+    const id = Number(item.dataset.id);
+    abrirEmail(id);
+
+    const lista = document.getElementById("email-lista");
+    if (lista) lista.innerHTML = renderEmails();
+}
+
+function abrirEmail(id) {
+
+    const email = Emails.find(e => e.id === id);
+    if (!email) return;
+
+    email.lido = true;
+
+    const box = document.getElementById("email-aberto");
+    if (!box) return;
+
+    box.innerHTML = `
+        <div class="email-conteudo">
+            <h3>${email.assunto}</h3>
+            <p class="remetente">De: ${email.remetente}</p>
+            <p class="data">${email.data}</p>
+            <br>
+            <p>${email.conteudo}</p>
+        </div>
+    `;
+}
 
 /* =========================
-SOLICITAÇÕES
+SOLICITAÇÕES (FIXED)
 ========================= */
 
 function criarJanelaSolicitacoes() {
@@ -281,7 +350,6 @@ function criarJanelaSolicitacoes() {
             </div>
 
             <div class="sol-dialogo">
-
                 <div class="dialogo-texto">
                     Aguardando solicitações...
                 </div>
@@ -290,7 +358,6 @@ function criarJanelaSolicitacoes() {
                     <button disabled>Opção 1</button>
                     <button disabled>Opção 2</button>
                 </div>
-
             </div>
 
         </div>
