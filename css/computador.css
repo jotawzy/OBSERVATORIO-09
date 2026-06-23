@@ -135,7 +135,8 @@ JANELAS (BASE)
     cursor: grab;
     font-size: 12px;
     position: relative;
-    z-index: 2;
+    z-index: 10;
+    pointer-events: auto;
     user-select: none;
 }
 
@@ -143,7 +144,7 @@ JANELAS (BASE)
     display: flex;
     gap: 8px;
     position: relative;
-    z-index: 3;
+    z-index: 20;
 }
 
 .botoes-janela button{
@@ -155,7 +156,8 @@ JANELAS (BASE)
     font-size: 10px;
     cursor: pointer;
     position: relative; 
-    z-index: 4;
+    z-index: 30;
+    pointer-events: auto;
 }
 
 .conteudo-janela{
