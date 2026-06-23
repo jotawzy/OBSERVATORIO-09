@@ -1,894 +1,249 @@
+/* ==========================================================================
+   CONFIGURAÇÕES E SELETORES DA UI
+   ========================================================================== */
 const areaJanelas = document.getElementById("area-janelas");
-
 const taskbar = document.getElementById("taskbar-apps");
 
-
-
 let zIndex = 10;
-
-
-
 const janelas = {};
-
 const taskIcons = {};
 
-
-
-/* =========================
-
-ICONS DOS APPS
-
-========================= */
-
-
-
 const appIcons = {
-
-emails: "pixelarticons:mail",
-
-arquivos: "pixelarticons:folder",
-
-solicitacoes: "pixelarticons:radio-signal",
-
-quadro: "pixelarticons:link",
-
-registros: "pixelarticons:book"
-
+    emails: "pixelarticons:mail",
+    arquivos: "pixelarticons:folder",
+    solicitacoes: "pixelarticons:radio-signal",
+    quadro: "pixelarticons:link",
+    registros: "pixelarticons:book"
 };
-
-
-
-/* =========================
-
-FULLSCREEN APPS
-
-========================= */
-
-
 
 const appsFullscreen = {
-
-solicitacoes: true,
-
-quadro: true
-
+    solicitacoes: true,
+    quadro: true
 };
 
-
-
-/* =========================
-
-APPS CLICK
-
-========================= */
-
-
-
+/* ==========================================================================
+   LISTENERS DOS APLICATIVOS (CLIQUES NO DESKTOP)
+   ========================================================================== */
 document.getElementById("app-emails").addEventListener("click", abrirEmails);
-
-
-
-document.getElementById("app-arquivos").addEventListener("click", () =>
-
-criarJanelaSimples("Arquivos", "Em desenvolvimento", "arquivos")
-
-);
-
-
-
 document.getElementById("app-solicitacoes").addEventListener("click", criarJanelaSolicitacoes);
 
-
-
+document.getElementById("app-arquivos").addEventListener("click", () =>
+    criarJanelaSimples("Arquivos", obterConteudoArquivos(), "arquivos")
+);
 document.getElementById("app-quadro").addEventListener("click", () =>
-
-criarJanelaSimples("Quadro", "Em desenvolvimento", "quadro")
-
+    criarJanelaSimples("Quadro", "<div class='detalhe-vazio'>📐 Quadro de investigação em desenvolvimento.</div>", "quadro")
 );
-
-
-
 document.getElementById("app-registros").addEventListener("click", () =>
-
-criarJanelaSimples("Registros", "Em desenvolvimento", "registros")
-
+    criarJanelaSimples("Registros", "<div class='detalhe-vazio'>📜 Histórico do Observatório vazio.</div>", "registros")
 );
 
-
-
-/* =========================
-
-LAYOUT (FULLSCREEN FIX)
-
-========================= */
-
-
-
+/* ==========================================================================
+   SISTEMA DE GERENCIAMENTO DE JANELAS
+   ========================================================================== */
 function aplicarLayoutJanela(janela, tipoApp) {
-
-
-
-const isFull = appsFullscreen?.[tipoApp];
-
-
-
-if (isFull) {
-
-janela.classList.add("fullscreen");
-
-
-
-janela.style.position = "absolute";
-
-janela.style.top = "0";
-
-janela.style.left = "0";
-
-janela.style.right = "0";
-
-janela.style.bottom = "60px"; // 👈 NÃO invade taskbar
-
-janela.style.width = "auto";
-
-janela.style.height = "auto";
-
-
-
-} else {
-
-janela.classList.remove("fullscreen");
-
-
-
-janela.style.position = "absolute";
-
-janela.style.top = "60px";
-
-janela.style.left = "60px";
-
-janela.style.right = "auto";
-
-janela.style.bottom = "auto";
-
-janela.style.width = "min(900px, 92vw)";
-
-janela.style.height = "min(600px, 75vh)";
-
+    if (appsFullscreen?.[tipoApp]) {
+        janela.classList.add("fullscreen");
+        Object.assign(janela.style, {
+            position: "absolute", top: "0", left: "0", right: "0", bottom: "60px", width: "auto", height: "auto"
+        });
+    } else {
+        janela.classList.remove("fullscreen");
+        Object.assign(janela.style, {
+            position: "absolute", top: "60px", left: "60px", right: "auto", bottom: "auto",
+            width: "min(900px, 92vw)", height: "min(600px, 75vh)"
+        });
+    }
 }
-
-}
-
-
-
-/* =========================
-
-JANELA BASE
-
-========================= */
-
-
 
 function criarJanelaSimples(titulo, conteudo, tipoApp = "emails") {
+    const janela = document.createElement("div");
+    janela.classList.add("janela");
 
+    const idJanela = Date.now();
+    janelas[idJanela] = janela;
 
+    aplicarLayoutJanela(janela, tipoApp);
+    janela.style.zIndex = zIndex++;
 
-const janela = document.createElement("div");
+    janela.innerHTML = `
+        <div class="barra-janela">
+            <span>${titulo}</span>
+            <div class="botoes-janela">
+                <button class="minimizar">_</button>
+                <button class="fechar">X</button>
+            </div>
+        </div>
+        <div class="conteudo-janela">${conteudo}</div>
+    `;
 
-janela.classList.add("janela");
+    areaJanelas.appendChild(janela);
 
+    janela.querySelector(".fechar").addEventListener("click", () => {
+        janela.remove();
+        delete janelas[idJanela];
+        if (taskIcons[idJanela]) {
+            taskIcons[idJanela].remove();
+            delete taskIcons[idJanela];
+        }
+    });
 
+    janela.querySelector(".minimizar").addEventListener("click", () => {
+        janela.style.display = "none";
+    });
 
-const idJanela = Date.now();
+    criarTaskbarIcone(idJanela, tipoApp);
+    if (!appsFullscreen[tipoApp]) ativarDrag(janela, janela.querySelector(".barra-janela"));
 
-janelas[idJanela] = janela;
-
-
-
-aplicarLayoutJanela(janela, tipoApp);
-
-
-
-janela.style.zIndex = zIndex++;
-
-
-
-janela.innerHTML = `
-
-<div class="barra-janela">
-
-<span>${titulo}</span>
-
-<div class="botoes-janela">
-
-<button class="minimizar">_</button>
-
-<button class="fechar">X</button>
-
-</div>
-
-</div>
-
-
-
-<div class="conteudo-janela">
-
-${conteudo}
-
-</div>
-
-`;
-
-
-
-areaJanelas.appendChild(janela);
-
-
-
-const btnFechar = janela.querySelector(".fechar");
-
-const btnMin = janela.querySelector(".minimizar");
-
-
-
-btnFechar.addEventListener("click", () => {
-
-janela.remove();
-
-delete janelas[idJanela];
-
-
-
-if (taskIcons[idJanela]) {
-
-taskIcons[idJanela].remove();
-
-delete taskIcons[idJanela];
-
+    return idJanela;
 }
-
-});
-
-
-
-btnMin.addEventListener("click", () => {
-
-janela.style.display = "none";
-
-});
-
-
-
-criarTaskbarIcone(idJanela, tipoApp);
-
-ativarDrag(janela, janela.querySelector(".barra-janela"));
-
-
-
-return idJanela;
-
-}
-
-
-
-/* =========================
-
-DRAG SYSTEM
-
-========================= */
-
-
-
-function ativarDrag(janela, barra) {
-
-
-
-let offsetX = 0;
-
-let offsetY = 0;
-
-let arrastando = false;
-
-let pointerId = null;
-
-
-
-barra.addEventListener("pointerdown", (e) => {
-
-
-
-if (e.target.closest("button")) return;
-
-
-
-arrastando = true;
-
-pointerId = e.pointerId;
-
-
-
-offsetX = e.clientX - janela.offsetLeft;
-
-offsetY = e.clientY - janela.offsetTop;
-
-
-
-focarJanela(janela);
-
-barra.setPointerCapture(pointerId);
-
-});
-
-
-
-barra.addEventListener("pointermove", (e) => {
-
-if (!arrastando || e.pointerId !== pointerId) return;
-
-
-
-janela.style.left = (e.clientX - offsetX) + "px";
-
-janela.style.top = (e.clientY - offsetY) + "px";
-
-});
-
-
-
-function parar(e) {
-
-if (e.pointerId !== pointerId) return;
-
-arrastando = false;
-
-pointerId = null;
-
-}
-
-
-
-barra.addEventListener("pointerup", parar);
-
-barra.addEventListener("pointercancel", parar);
-
-document.addEventListener("pointerup", parar);
-
-}
-
-
-
-/* =========================
-
-FOCO
-
-========================= */
-
-
 
 function focarJanela(janela) {
-
-janela.style.zIndex = zIndex++;
-
+    janela.style.zIndex = zIndex++;
 }
 
+/* ==========================================================================
+   SISTEMA DE ARRASTAR JANELAS (DRAG)
+   ========================================================================== */
+function ativarDrag(janela, barra) {
+    let offsetX = 0, offsetY = 0, arrastando = false, pointerId = null;
 
+    barra.addEventListener("pointerdown", (e) => {
+        if (e.target.closest("button")) return;
+        arrastando = true;
+        pointerId = e.pointerId;
+        offsetX = e.clientX - janela.offsetLeft;
+        offsetY = e.clientY - janela.offsetTop;
+        focarJanela(janela);
+        barra.setPointerCapture(pointerId);
+    });
 
-/* =========================
+    barra.addEventListener("pointermove", (e) => {
+        if (!arrastando || e.pointerId !== pointerId) return;
+        janela.style.left = (e.clientX - offsetX) + "px";
+        janela.style.top = (e.clientY - offsetY) + "px";
+    });
 
-TASKBAR
+    const parar = (e) => {
+        if (e.pointerId !== pointerId) return;
+        arrastando = false;
+        pointerId = null;
+    };
 
-========================= */
+    barra.addEventListener("pointerup", parar);
+    barra.addEventListener("pointercancel", parar);
+    document.addEventListener("pointerup", parar);
+}
 
-
-
+/* ==========================================================================
+   SISTEMA DA BARRA DE TAREFAS (TASKBAR)
+   ========================================================================== */
 function criarTaskbarIcone(id, tipoApp) {
+    const icon = document.createElement("div");
+    icon.classList.add("taskbar-icone");
+    icon.innerHTML = `<iconify-icon icon="${appIcons[tipoApp] || "pixelarticons:question"}"></iconify-icon>`;
 
+    icon.addEventListener("click", () => {
+        const janela = janelas[id];
+        if (!janela) return;
+        janela.style.display = "flex";
+        focarJanela(janela);
+    });
 
-
-const icon = document.createElement("div");
-
-icon.classList.add("taskbar-icone");
-
-
-
-const iconFinal = appIcons[tipoApp] || "pixelarticons:question";
-
-
-
-icon.innerHTML = `<iconify-icon icon="${iconFinal}"></iconify-icon>`;
-
-
-
-icon.addEventListener("click", () => {
-
-const janela = janelas[id];
-
-if (!janela) return;
-
-
-
-janela.style.display = "flex";
-
-focarJanela(janela);
-
-});
-
-
-
-taskIcons[id] = icon;
-
-taskbar.appendChild(icon);
-
+    taskIcons[id] = icon;
+    taskbar.appendChild(icon);
 }
 
-
-
-/* =========================
-
-EMAILS
-
-========================= */
-
-
-
-const Emails = [
-
-{
-
-id: 1,
-
-remetente: "Coordenação Central",
-
-assunto: "Relatório de estabilidade",
-
-data: "27/02/20?? - 08:12",
-
-conteudo: "Os sistemas do Observatório 9 permanecem operacionais.",
-
-lido: true
-
-},
-
-{
-
-id: 2,
-
-remetente: "Setor Externo",
-
-assunto: "Transmissão interrompida",
-
-data: "28/02/20?? - 23:47",
-
-conteudo: "Perdemos contato com duas estações secundárias.",
-
-lido: true
-
-},
-
-{
-
-id: 3,
-
-remetente: "???",
-
-assunto: "Você está sendo observado",
-
-data: "??/??/20?? - 04:13",
-
-conteudo: "Não confie nos relatórios da noite anterior.",
-
-lido: false
-
-}
-
-];
-
-
-
-/* =========================
-
-EMAILS OPEN
-
-========================= */
-
-
-
+/* ==========================================================================
+   APLICATIVO: E-MAILS
+   ========================================================================== */
 function abrirEmails() {
-
-
-
-const conteudo = `
-
-<div class="email-layout">
-
-
-
-<div class="email-lista" id="email-lista">
-
-${renderEmails()}
-
-</div>
-
-
-
-<div class="email-leitura" id="email-aberto">
-
-<p class="placeholder">Selecione um e-mail</p>
-
-</div>
-
-
-
-</div>
-
-`;
-
-
-
-criarJanelaSimples("Caixa de Entrada", conteudo, "emails");
-
-
-
-document.addEventListener("click", emailClickHandler);
-
+    const conteudo = `
+        <div class="email-layout">
+            <div class="email-lista" id="email-lista">${renderEmails()}</div>
+            <div class="email-leitura" id="email-aberto">
+                <p class="placeholder">Selecione um e-mail</p>
+            </div>
+        </div>
+    `;
+    criarJanelaSimples("Caixa de Entrada", conteudo, "emails");
 }
-
-
 
 function renderEmails() {
-
-return Emails.map(email => `
-
-<div class="email-item ${email.lido ? "lido" : "nao-lido"}" data-id="${email.id}">
-
-<div class="email-topo">
-
-<strong>${email.remetente}</strong>
-
-${email.lido ? "" : "<span class='ponto'>●</span>"}
-
-</div>
-
-<div class="email-assunto">${email.assunto}</div>
-
-<div class="email-data">${email.data}</div>
-
-</div>
-
-`).join("");
-
+    return gameState.emails.map(email => `
+        <div class="email-item ${email.lido ? 'lido' : 'nao-lido'}" data-id="${email.id}">
+            <div class="email-topo">
+                <strong>${email.remetente}</strong>
+                ${email.lido ? "" : "<span class='ponto'>●</span>"}
+            </div>
+            <div class="email-assunto">${email.assunto}</div>
+            <div class="email-data">${email.data}</div>
+        </div>
+    `).join("");
 }
 
-
-
-function emailClickHandler(e) {
-
-
-
-const item = e.target.closest(".email-item");
-
-if (!item) return;
-
-
-
-const id = Number(item.dataset.id);
-
-abrirEmail(id);
-
-
-
-const lista = document.getElementById("email-lista");
-
-if (lista) lista.innerHTML = renderEmails();
-
-}
-
-
-
-function abrirEmail(id) {
-
-
-
-const email = Emails.find(e => e.id === id);
-
-if (!email) return;
-
-
-
-email.lido = true;
-
-
-
-const box = document.getElementById("email-aberto");
-
-if (!box) return;
-
-
-
-box.innerHTML = `
-
-<div class="email-conteudo">
-
-<h3>${email.assunto}</h3>
-
-<p class="remetente">De: ${email.remetente}</p>
-
-<p class="data">${email.data}</p>
-
-<br>
-
-<p>${email.conteudo}</p>
-
-</div>
-
-`;
-
-}
-
-
-
-/* =========================
-
-SOLICITAÇÕES (FIXED)
-
-========================= */
-
-
-
-function criarJanelaSolicitacoes() {
-
-
-
-const janela = document.createElement("div");
-
-janela.classList.add("janela");
-
-
-
-const idJanela = Date.now();
-
-janelas[idJanela] = janela;
-
-
-
-aplicarLayoutJanela(janela, "solicitacoes");
-
-
-
-janela.style.zIndex = zIndex++;
-
-
-
-janela.innerHTML = `
-
-<div class="barra-janela">
-
-<span>Solicitações</span>
-
-<div class="botoes-janela">
-
-<button class="minimizar">_</button>
-
-<button class="fechar">X</button>
-
-</div>
-
-</div>
-
-
-
-<div class="solicitacoes-layout">
-
-
-
-<div class="sol-docs">
-
-<div class="doc-placeholder">
-
-📄 Nenhum documento selecionado
-
-</div>
-
-</div>
-
-
-
-<div class="sol-npc">
-
-<div class="npc-sprite">👤</div>
-
-</div>
-
-
-
-<div class="sol-dialogo">
-
-<div class="dialogo-texto">
-
-Aguardando solicitações...
-
-</div>
-
-
-
-<div class="dialogo-opcoes">
-
-<button disabled>Opção 1</button>
-
-<button disabled>Opção 2</button>
-
-</div>
-
-</div>
-
-
-
-</div>
-
-`;
-
-
-
-areaJanelas.appendChild(janela);
-
-
-
-const btnFechar = janela.querySelector(".fechar");
-
-const btnMin = janela.querySelector(".minimizar");
-
-
-
-btnMin.addEventListener("click", () => {
-
-janela.style.display = "none";
-
-});
-
-
-
-btnFechar.addEventListener("click", () => {
-
-janela.remove();
-
-delete janelas[idJanela];
-
-
-
-if (taskIcons[idJanela]) {
-
-taskIcons[idJanela].remove();
-
-delete taskIcons[idJanela];
-
-}
-
-});
-
-
-
-criarTaskbarIcone(idJanela, "solicitacoes");
-
-
-
-return idJanela;
-
-}
-
-
-
-/* ARQUIVOS */
-
-function abrirArquivos(){
-
-
-
-const conteudo = `
-
-<div class="arquivos-layout">
-
-
-
-<!-- LISTA ESQUERDA -->
-
-<div class="arquivos-lista" id="arquivos-lista">
-
-
-
-<div class="arquivos-placeholder">
-
-📁 Nenhum arquivo carregado
-
-</div>
-
-
-
-</div>
-
-
-
-<!-- PAINEL DIREITO -->
-
-<div class="arquivos-detalhe" id="arquivos-detalhe">
-
-
-
-<div class="detalhe-placeholder">
-
-Selecione um arquivo para visualizar
-
-</div>
-
-
-
-</div>
-
-
-
-</div>
-
-`;
-
-
-
-criarJanelaSimples("Arquivos", conteudo, "arquivos");
-
-
-
-prepararArquivosUI();
-
-}
-
-
-
-function prepararArquivosUI(){
-
-
-
-const lista = document.getElementById("arquivos-lista");
-
-const detalhe = document.getElementById("arquivos-detalhe");
-
-
-
-if (!lista || !detalhe) return;
-
-
-
-// reset futuro (quando dados chegarem)
-
-lista.dataset.ready = "true";
-
-detalhe.dataset.ready = "true";
-
-}
-
-
-
+// Gerenciador de cliques nos e-mails
 document.addEventListener("click", (e) => {
+    const item = e.target.closest(".email-item");
+    if (!item) return;
 
+    const id = Number(item.dataset.id);
+    const email = gameState.emails.find(evt => evt.id === id);
+    
+    if (email) {
+        email.lido = true;
+        const lista = document.getElementById("email-lista");
+        if (lista) lista.innerHTML = renderEmails();
 
-
-const item = e.target.closest(".arquivo-item");
-
-if (!item) return;
-
-
-
-const lista = document.getElementById("arquivos-detalhe");
-
-if (!lista) return;
-
-
-
-lista.innerHTML = `
-
-<div class="detalhe-vazio">
-
-🔒 Nenhum conteúdo carregado ainda
-
-</div>
-
-`;
-
+        const box = document.getElementById("email-aberto");
+        if (box) {
+            box.innerHTML = `
+                <div class="email-conteudo">
+                    <h3>${email.assunto}</h3>
+                    <p class="remetente">De: ${email.remetente}</p>
+                    <p class="data">${email.data}</p>
+                    <br>
+                    <p>${email.conteudo}</p>
+                </div>
+            `;
+        }
+    }
 });
 
+/* ==========================================================================
+   APLICATIVO: ARQUIVOS
+   ========================================================================== */
+function obtenerConteudoArquivos() {
+    return `
+        <div class="arquivos-layout">
+            <div class="arquivos-lista">
+                <div class="arquivos-placeholder">📁 Nenhum arquivo carregado</div>
+            </div>
+            <div class="arquivos-detalhe">
+                <div class="detalhe-placeholder">Selecione um arquivo para visualizar</div>
+            </div>
+        </div>
+    `;
+}
+
+/* ==========================================================================
+   APLICATIVO: SOLICITAÇÕES
+   ========================================================================== */
+function criarJanelaSolicitacoes() {
+    criarJanelaSimples("Solicitações", `
+        <div class="solicitacoes-layout">
+            <div class="sol-docs">
+                <div class="doc-placeholder">📄 Nenhum documento selecionado</div>
+            </div>
+            <div class="sol-npc">
+                <div class="npc-sprite">👤</div>
+            </div>
+            <div class="sol-dialogo">
+                <div class="dialogo-texto">Aguardando solicitações do portão...</div>
+                <div class="dialogo-opcoes">
+                    <button disabled>Aceitar</button>
+                    <button disabled>Recusar</button>
+                </div>
+            </div>
+        </div>
+    `, "solicitacoes");
+}
