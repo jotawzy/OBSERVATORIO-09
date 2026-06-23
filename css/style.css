@@ -1,0 +1,46 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #08110a;
+    color: #c6ffd0;
+    font-family: "Silkscreen", sans-serif;;
+}
+
+button {
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+}
+
+button{
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus{
+    outline: none;
+}
+
+.icone-app{
+    user-select: none;
+}
+
+.taskbar-icone{
+    user-select: none;
+}
+
+.fullscreen{
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100% - 60px) !important;
+    position: absolute !important;
+}
