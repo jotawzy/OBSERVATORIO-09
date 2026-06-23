@@ -51,10 +51,13 @@ const gameState = {
     currentDay: 1,
     time: "21:34",
     emails: [...EmailsDatabase], 
-    unlockedFiles: [], // 👈 Começa totalmente VAZIO como você pediu!
+    unlockedFiles: [], 
     historyLogs: [],
-    insideObservatory: []
+    insideObservatory: [],
+    filaDoDia: [],
+    rejectedOutside: []
 };
+
 
 /* ==========================================================================
    CONFIGURAÇÕES E SELETORES DA UI
@@ -431,8 +434,11 @@ function chamarProximoNpc() {
         return;
     }
 
-    // Busca as propriedades brutas no banco de dados
-    npcAtual = characterDatabase[proximoId];
+    const npcOriginal = characterDatabase[proximoId];
+    npcAtual = { 
+        ...npcOriginal, 
+        perguntas: [...npcOriginal.perguntas] // Copia a lista para não apagar do banco de dados original!
+    };
     perguntasRestantes = npcAtual.perguntas.length;
 
     // Atualiza Foto (Canto Superior Direito)
