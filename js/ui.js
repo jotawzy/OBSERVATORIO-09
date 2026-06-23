@@ -325,6 +325,9 @@ function criarJanelaSolicitacoes() {
     const janela = janelas[idJanela];
     if (!janela) return;
 
+    // força manter fullscreen ativo
+    janela.classList.add("fullscreen");
+
     janela.innerHTML = `
         <div class="barra-janela">
             <span>Solicitações</span>
@@ -334,7 +337,7 @@ function criarJanelaSolicitacoes() {
             </div>
         </div>
 
-        <div class="conteudo-janela solicitacoes-layout">
+        <div class="solicitacoes-layout">
 
             <div class="sol-docs">
                 <div class="doc-placeholder">
