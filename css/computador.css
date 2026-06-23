@@ -295,7 +295,7 @@ EMAIL SYSTEM
 }
 
 .fullscreen{
-    position: absolute !important;
+    position: flex;
     top: 0;
     left: 0;
     right: 0;
