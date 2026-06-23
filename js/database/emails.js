@@ -25,4 +25,13 @@ export const EmailsDatabase = [
         conteudo: "Não confie nos relatórios da noite anterior.",
         lido: true
     },
-]
+];
+
+const gameState = {
+    currentDay: 1,
+    time: "21:34",
+    emails: [...EmailsDatabase], 
+    unlockedFiles: [],
+    historyLogs: [],
+    insideObservatory: []
+};

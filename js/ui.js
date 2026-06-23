@@ -1,5 +1,3 @@
-import { gameState } from './core/state.js';
-
 const areaJanelas = document.getElementById("area-janelas");
 const taskbar = document.getElementById("taskbar-apps");
 
@@ -20,9 +18,9 @@ const appsFullscreen = {
     quadro: true
 };
 
-/* =========================
-LISTENERS DOS APPS DO DESKTOP
-========================= */
+/* ==========================================================================
+   LISTENERS DOS APLICATIVOS (CLIQUES NO DESKTOP)
+   ========================================================================== */
 document.getElementById("app-emails").addEventListener("click", abrirEmails);
 document.getElementById("app-solicitacoes").addEventListener("click", criarJanelaSolicitacoes);
 
@@ -30,15 +28,15 @@ document.getElementById("app-arquivos").addEventListener("click", () =>
     criarJanelaSimples("Arquivos", obterConteudoArquivos(), "arquivos")
 );
 document.getElementById("app-quadro").addEventListener("click", () =>
-    criarJanelaSimples("Quadro", "<p class='placeholder'>Quadro de investigação em desenvolvimento.</p>", "quadro")
+    criarJanelaSimples("Quadro", "<div class='detalhe-vazio'>📐 Quadro de investigação em desenvolvimento.</div>", "quadro")
 );
 document.getElementById("app-registros").addEventListener("click", () =>
-    criarJanelaSimples("Registros", "<p class='placeholder'>Histórico do Observatório vazio.</p>", "registros")
+    criarJanelaSimples("Registros", "<div class='detalhe-vazio'>📜 Histórico do Observatório vazio.</div>", "registros")
 );
 
-/* =========================
-LAYOUT & GERENCIAMENTO DE JANELAS
-========================= */
+/* ==========================================================================
+   SISTEMA DE GERENCIAMENTO DE JANELAS
+   ========================================================================== */
 function aplicarLayoutJanela(janela, tipoApp) {
     if (appsFullscreen?.[tipoApp]) {
         janela.classList.add("fullscreen");
@@ -100,9 +98,9 @@ function focarJanela(janela) {
     janela.style.zIndex = zIndex++;
 }
 
-/* =========================
-DRAG SYSTEM (SISTEMA DE ARRASTAR)
-========================= */
+/* ==========================================================================
+   SISTEMA DE ARRASTAR JANELAS (DRAG)
+   ========================================================================== */
 function ativarDrag(janela, barra) {
     let offsetX = 0, offsetY = 0, arrastando = false, pointerId = null;
 
@@ -133,9 +131,9 @@ function ativarDrag(janela, barra) {
     document.addEventListener("pointerup", parar);
 }
 
-/* =========================
-TASKBAR (BARRA DE TAREFAS INFERIOR)
-========================= */
+/* ==========================================================================
+   SISTEMA DA BARRA DE TAREFAS (TASKBAR)
+   ========================================================================== */
 function criarTaskbarIcone(id, tipoApp) {
     const icon = document.createElement("div");
     icon.classList.add("taskbar-icone");
@@ -144,7 +142,7 @@ function criarTaskbarIcone(id, tipoApp) {
     icon.addEventListener("click", () => {
         const janela = janelas[id];
         if (!janela) return;
-        janela.style.display = janela.style.display === "none" ? "flex" : "flex";
+        janela.style.display = "flex";
         focarJanela(janela);
     });
 
@@ -152,9 +150,9 @@ function criarTaskbarIcone(id, tipoApp) {
     taskbar.appendChild(icon);
 }
 
-/* =========================
-MÓDULO: SISTEMA DE EMAILS
-========================= */
+/* ==========================================================================
+   APLICATIVO: E-MAILS
+   ========================================================================== */
 function abrirEmails() {
     const conteudo = `
         <div class="email-layout">
@@ -180,7 +178,7 @@ function renderEmails() {
     `).join("");
 }
 
-// Captura cliques nos e-mails delegando direto no documento de forma limpa
+// Gerenciador de cliques nos e-mails
 document.addEventListener("click", (e) => {
     const item = e.target.closest(".email-item");
     if (!item) return;
@@ -208,10 +206,10 @@ document.addEventListener("click", (e) => {
     }
 });
 
-/* =========================
-MÓDULO: APLICATIVO ARQUIVOS
-========================= */
-function obterConteudoArquivos() {
+/* ==========================================================================
+   APLICATIVO: ARQUIVOS
+   ========================================================================== */
+function obtenerConteudoArquivos() {
     return `
         <div class="arquivos-layout">
             <div class="arquivos-lista">
@@ -224,9 +222,9 @@ function obterConteudoArquivos() {
     `;
 }
 
-/* =========================
-MÓDULO: SOLICITAÇÕES
-========================= */
+/* ==========================================================================
+   APLICATIVO: SOLICITAÇÕES
+   ========================================================================== */
 function criarJanelaSolicitacoes() {
     criarJanelaSimples("Solicitações", `
         <div class="solicitacoes-layout">
