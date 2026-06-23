@@ -473,10 +473,10 @@ function chamarProximoNpc() {
     // Reseta e bloqueia os botões de decisão até terminar o interrogatório
     const btnAceitar = document.getElementById("btn-liberar-portao");
     const btnRecusar = document.getElementById("btn-mandar-embora");
-    btnAceitar.disabled = true;
-    btnAceitar.style.cursor = "not-allowed";
-    btnRecusar.disabled = true;
-    btnRecusar.style.cursor = "not-allowed";
+    btnAceitar.disabled = false;
+    btnAceitar.style.cursor = "pointer";
+    btnRecusar.disabled = false;
+    btnRecusar.style.cursor = "pointer";
 
     // Gera os botões de perguntas dinamicamente
     renderizarBotoesPerguntas();
@@ -512,16 +512,8 @@ function renderizarBotoesPerguntas() {
             container.appendChild(btn);
         });
     } else {
-        // Quando esgotam as perguntas, libera os botões de decisão final!
-        container.innerHTML = `<div style="font-size:9px; color:#8dff9a; opacity:0.6; text-align:center; padding: 2px;">[ INTERROGATÓRIO CONCLUÍDO - TOME UMA DECISÃO ]</div>`;
-        
-        const btnAceitar = document.getElementById("btn-liberar-portao");
-        const btnRecusar = document.getElementById("btn-mandar-embora");
-        
-        btnAceitar.disabled = false;
-        btnAceitar.style.cursor = "pointer";
-        btnRecusar.disabled = false;
-        btnRecusar.style.cursor = "pointer";
+        // Apenas exibe a mensagem, pois os botões de ação já estão livres
+        container.innerHTML = `<div style="font-size:9px; color:#8dff9a; opacity:0.6; text-align:center; padding: 2px;">[ NÃO HÁ MAIS PERGUNTAS DISPONÍVEIS ]</div>`;
     }
 }
 
