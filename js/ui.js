@@ -1,6 +1,5 @@
-/* ==========================================================================
-   ESTADO GLOBAL DO JOGO & BANCOS DE DADOS INTEGRADOS
-   ========================================================================== */
+import { characterDatabase } from './database/characters.js';
+
 const EmailsDatabase = [
     {
         id: 1,
