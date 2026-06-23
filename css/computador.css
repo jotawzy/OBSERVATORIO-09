@@ -136,6 +136,7 @@ JANELAS (BASE)
     font-size: 12px;
     position: relative;
     z-index: 2;
+    user-select: none;
 }
 
 .botoes-janela{
