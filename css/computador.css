@@ -1,0 +1,287 @@
+#tela-computador{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #08110a;
+}
+
+/* =========================
+BARRA SUPERIOR
+========================= */
+
+#barra-superior{
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background: #102115;
+    border-bottom: 3px solid #26422c;
+}
+
+#nome-sistema{
+    font-size: 14px;
+    color: #c6ffd0;
+    text-shadow: 0 0 5px rgba(120,255,120,.4);
+}
+
+/* =========================
+DESKTOP
+========================= */
+
+#desktop{
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 50px;
+    padding: 40px 25px;
+}
+
+/* =========================
+ICONES
+========================= */
+
+.icone-app{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    cursor: pointer;
+}
+
+.icone-app iconify-icon{
+    font-size: 64px;
+    color: #8dff9a;
+    filter: drop-shadow(0 0 6px rgba(120,255,120,.4));
+}
+
+.icone-app span{
+    font-size: 10px;
+    text-align: center;
+    color: #c6ffd0;
+}
+
+/* =========================
+BARRA INFERIOR
+========================= */
+
+#barra-inferior{
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    background: #102115;
+    border-top: 3px solid #26422c;
+    color: #89c78d;
+    font-size: 11px;
+}
+
+#taskbar-apps{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.taskbar-icone{
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1b2f22;
+    border: 1px solid #26422c;
+    cursor: pointer;
+}
+
+.taskbar-icone iconify-icon{
+    font-size: 18px;
+    color: #8dff9a;
+}
+
+/* =========================
+JANELAS (BASE)
+========================= */
+
+#area-janelas{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.janela{
+    position: absolute;
+    width: min(900px, 92vw);
+    height: min(600px, 75vh);
+    background: #0f1f14;
+    border: 2px solid #26422c;
+    display: flex;
+    flex-direction: column;
+    pointer-events: all;
+}
+
+.barra-janela{
+    height: 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    background: #102115;
+    border-bottom: 2px solid #26422c;
+    cursor: grab;
+    font-size: 12px;
+    user-select: none;
+}
+
+.botoes-janela{
+    display: flex;
+    gap: 8px;
+}
+
+.botoes-janela button{
+    width: 18px;
+    height: 18px;
+    background: #1b2f22;
+    border: 1px solid #26422c;
+    color: #c6ffd0;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.conteudo-janela{
+    flex: 1;
+    padding: 10px;
+    font-size: 11px;
+    color: #c6ffd0;
+    overflow: hidden;
+}
+
+/* =========================
+EMAIL SYSTEM
+========================= */
+
+.email-layout{
+    display: flex;
+    height: 100%;
+    font-family: monospace;
+    color: #cfe8d8;
+    overflow: hidden;
+}
+
+.email-lista{
+    width: 40%;
+    border-right: 1px solid #2a3a2f;
+    padding-right: 8px;
+    overflow-y: auto;
+}
+
+.email-leitura{
+    width: 60%;
+    padding-left: 10px;
+    overflow-y: auto;
+}
+
+.email-item{
+    padding: 6px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    background: #0f1411;
+    border: 1px solid #1f2a24;
+}
+
+.email-item:hover{
+    background: #16201b;
+}
+
+.email-topo{
+    display: flex;
+    justify-content: space-between;
+}
+
+.email-assunto{
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.ponto{
+    color: #00ff9a;
+}
+
+.remetente{
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.placeholder{
+    opacity: 0.5;
+}
+
+
+.solicitacoes-layout{
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 180px;
+    background: #08110a;
+    color: #c6ffd0;
+    font-family: monospace;
+}
+
+.sol-docs{
+    grid-column: 1;
+    grid-row: 1;
+    border-right: 2px solid #26422c;
+    border-bottom: 2px solid #26422c;
+    padding: 10px;
+    overflow: auto;
+}
+
+.sol-npc{
+    grid-column: 2;
+    grid-row: 1;
+    border-bottom: 2px solid #26422c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.npc-sprite{
+    font-size: 80px;
+    filter: drop-shadow(0 0 10px rgba(120,255,120,.3));
+}
+
+.sol-dialogo{
+    grid-column: 1 / span 2;
+    grid-row: 2;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dialogo-texto{
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #26422c;
+    background: #0f1f14;
+    overflow: auto;
+}
+
+.dialogo-opcoes{
+    display: flex;
+    gap: 10px;
+}
+
+.dialogo-opcoes button{
+    flex: 1;
+    background: #102115;
+    border: 1px solid #26422c;
+    color: #c6ffd0;
+    padding: 10px;
+    cursor: pointer;
+}
