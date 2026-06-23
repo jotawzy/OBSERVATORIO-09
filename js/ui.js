@@ -1,3 +1,45 @@
+/* ==========================================================================
+   ESTADO GLOBAL DO JOGO (Banco de dados temporário no próprio arquivo)
+   ========================================================================== */
+const EmailsDatabase = [
+    {
+        id: 1,
+        remetente: "Coordenação Central",
+        assunto: "Relatório de estabilidade",
+        data: "27/02/20?? - 08:12",
+        conteudo: "Os sistemas do Observatório 9 permanecem operacionais.",
+        lido: true
+    },
+    {
+        id: 2,
+        remetente: "Setor Externo",
+        assunto: "Transmissão interrompida",
+        data: "28/02/20?? - 23:47",
+        conteudo: "Perdemos contato com duas estações secundárias.",
+        lido: true
+    },
+    {
+        id: 3,
+        remetente: "???",
+        assunto: "Você está sendo observado",
+        data: "??/??/20?? - 04:13",
+        conteudo: "Não confie nos relatórios da noite anterior.",
+        lido: false
+    }
+];
+
+const gameState = {
+    currentDay: 1,
+    time: "21:34",
+    emails: [...EmailsDatabase], 
+    unlockedFiles: [],
+    historyLogs: [],
+    insideObservatory: []
+};
+
+/* ==========================================================================
+   CONFIGURAÇÕES E SELETORES DA UI
+   ========================================================================== */
 const areaJanelas = document.getElementById("area-janelas");
 const taskbar = document.getElementById("taskbar-apps");
 
