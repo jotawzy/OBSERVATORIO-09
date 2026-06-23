@@ -125,18 +125,19 @@ function ativarDrag(janela, barra){
 
     barra.addEventListener("pointerdown", (e) => {
 
-        if(e.target.tagName === "BUTTON")return;
+    const botao = e.target.closest("button");
+    if (botao) return;
 
-        arrastando = true;
-        pointerId = e.pointerId;
+    arrastando = true;
+    pointerId = e.pointerId;
 
-        offsetX = e.clientX - janela.offsetLeft;
-        offsetY = e.clientY - janela.offsetTop;
+    offsetX = e.clientX - janela.offsetLeft;
+    offsetY = e.clientY - janela.offsetTop;
 
-        focarJanela(janela);
+    focarJanela(janela);
 
-        barra.setPointerCapture(pointerId);
-    });
+    barra.setPointerCapture(pointerId);
+});
 
     barra.addEventListener("pointermove", (e) => {
 
@@ -327,25 +328,26 @@ function criarJanelaSolicitacoes(){
     janela.style.zIndex = zIndex++;
 
     janela.innerHTML = `
+        <div class="barra-janela">
+            <span>Solicitações</span>
+            <div class="botoes-janela">
+                <button class="fechar">X</button>
+            </div>
+        </div>
+
         <div class="solicitacoes-layout">
 
-            <!-- ÁREA ESQUERDA (DOCUMENTOS / INFO) -->
             <div class="sol-docs">
                 <div class="doc-placeholder">
                     📄 Nenhum documento selecionado
                 </div>
             </div>
 
-            <!-- ÁREA DIREITA (SPRITE NPC) -->
             <div class="sol-npc">
-                <div class="npc-sprite">
-                    👤
-                </div>
+                <div class="npc-sprite">👤</div>
             </div>
 
-            <!-- ÁREA INFERIOR (DIÁLOGO) -->
             <div class="sol-dialogo">
-
                 <div class="dialogo-texto">
                     Aguardando solicitações...
                 </div>
@@ -354,7 +356,6 @@ function criarJanelaSolicitacoes(){
                     <button disabled>Opção 1</button>
                     <button disabled>Opção 2</button>
                 </div>
-
             </div>
 
         </div>
@@ -362,7 +363,14 @@ function criarJanelaSolicitacoes(){
 
     areaJanelas.appendChild(janela);
 
+    const btnFechar = janela.querySelector(".fechar");
+
+    btnFechar.addEventListener("click", () => {
+        janela.remove();
+        delete janelas[idJanela];
+    });
+
     criarTaskbarIcone(idJanela, "solicitacoes");
 
     return idJanela;
-    }
+}
