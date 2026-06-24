@@ -363,17 +363,33 @@ EMAIL SYSTEM
     background: transparent;
 }
 
-.terminal-header { margin-bottom: 15px; border-bottom: 1px solid #8dff9a; }
+.terminal-header { 
+    margin-bottom: 15px; 
+    border-bottom: 1px solid #8dff9a; }
+
 .cursor-block { 
-    display: inline-block; width: 10px; height: 18px; 
-    background: #8dff9a; animation: blink 1s step-end infinite; 
+    display: inline-block; 
+    width: 10px; height: 18px; 
+    background: #8dff9a; 
+    animation: blink 1s step-end infinite; 
     vertical-align: middle; 
 }
 @keyframes blink { 50% { opacity: 0; } }
 
 .btn-acao {
-    background: #111a13; border: 1px solid #8dff9a; color: #8dff9a;
-    padding: 10px; cursor: pointer; font-family: 'Silkscreen', cursive;
+    background: #111a13; 
+    border: 1px solid #8dff9a; 
+    color: #8dff9a;
+    padding: 10px; 
+    cursor: pointer; font-family: 'Silkscreen', cursive;
     margin: 5px;
 }
-.btn-acao:hover { background: #8dff9a; color: #020503; }
+.btn-acao:hover { 
+    background: #8dff9a; 
+    color: #020503; }
+
+#sol-dialogo-texto {
+    cursor: pointer; 
+    white-space: pre-wrap; 
+    min-height: 80px; 
+}

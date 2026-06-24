@@ -473,50 +473,71 @@ document.addEventListener("click", (e) => {
 // FLUXO DO NPC E TERMINAL
 // ==========================================
 
-/* --- FERRAMENTAS --- */
-async function typewriter(element, text, speed = 20) {
-    element.innerHTML = "";
+let isTyping = false;
+let currentFullText = "";
+
+async function typewriter(element, text) {
+    isTyping = true;
+    currentFullText = text;
+    element.innerText = ""; // Limpa texto anterior
+    
     for (let char of text) {
-        element.innerHTML += char;
-        await new Promise(r => setTimeout(r, speed));
+        if (!isTyping) {
+            element.innerText = text;
+            return;
+        }
+        element.innerText += char;
+        await new Promise(r => setTimeout(r, 20));
     }
+    isTyping = false;
 }
 
-/* --- LÓGICA NPC --- */
+// Evento global para pular texto
+document.getElementById("sol-dialogo-texto").onclick = () => {
+    if (isTyping) {
+        isTyping = false; 
+    }
+};
+
 function chamarProximoNpc() {
     const proximoId = gameState.filaDoDia[0];
 
+    // Se a fila acabou, abre o terminal
     if (!proximoId) {
         const layout = document.querySelector(".solicitacoes-layout");
-        layout.innerHTML = `<div id="tela-terminal"></div>`;
+        layout.innerHTML = `<div id="tela-terminal" style="padding: 20px;"></div>`;
         iniciarAnimacaoTerminal();
         return;
     }
 
-    const npcOriginal = characterDatabase[proximoId];
-    npcAtual = { ...npcOriginal, perguntas: [...npcOriginal.perguntas] };
+    const npc = characterDatabase[proximoId];
+    if (!npc) return; // Segurança
 
-    document.getElementById("sol-npc-sprite").setAttribute("icon", npcAtual.sprite);
-    document.getElementById("sol-badge-status").innerText = "RETIDO";
+    npcAtual = { ...npc, perguntas: [...npc.perguntas] };
+
+    // Atualiza dados
+    document.getElementById("sol-npc-sprite").innerText = npcAtual.sprite;
+    document.getElementById("sol-badge-status").innerText = npcAtual.seguranca || "RETIDO";
 
     const itemVisor = document.getElementById("sol-item-visor");
     const itemNome = document.getElementById("sol-item-nome");
 
+    // Lógica de Documentos
     if (npcAtual.itensTrazidos?.length > 0) {
-        const dadosItem = documentsDatabase[npcAtual.itensTrazidos[0]];
-        if (dadosItem) {
-            itemVisor.setAttribute("icon", dadosItem.icone);
-            itemNome.innerText = dadosItem.nome;
-            if (!gameState.unlockedFiles.includes(npcAtual.itensTrazidos[0])) gameState.unlockedFiles.push(npcAtual.itensTrazidos[0]);
-        }
+        const docId = npcAtual.itensTrazidos[0];
+        // Certifique-se que documentsDatabase existe no escopo global
+        const doc = typeof documentsDatabase !== 'undefined' ? documentsDatabase[docId] : null;
+        itemVisor.innerText = doc ? doc.icone : "📁";
+        itemNome.innerText = doc ? doc.nome : "DOC DESCONHECIDO";
     } else {
-        itemVisor.setAttribute("icon", "pixelarticons:folder");
+        itemVisor.innerText = "✖";
         itemNome.innerText = "NENHUM DOCUMENTO";
     }
 
-    // Animação de fala
-    const caixaTexto = document.getElementById("sol-dialogo-texto");
-    typewriter(caixaTexto, npcAtual.dialogoInicial).then(renderizarPainelDinamico);
+    // Escreve o texto inicial
+    typewriter(document.getElementById("sol-dialogo-texto"), npcAtual.dialogoInicial).then(() => {
+        renderizarPainelDinamico();
+    });
 }
 
 function renderizarPainelDinamico() {
@@ -524,7 +545,7 @@ function renderizarPainelDinamico() {
     painel.innerHTML = "";
 
     if (npcAtual.perguntas?.length >= 2) {
-        [npcAtual.perguntas[0], npcAtual.perguntas[1]].forEach(p => {
+        npcAtual.perguntas.slice(0, 2).forEach(p => {
             const btn = document.createElement("button");
             btn.className = "btn-acao";
             btn.innerText = p.textoBotao;
@@ -532,19 +553,20 @@ function renderizarPainelDinamico() {
             painel.appendChild(btn);
         });
     } else {
-        [{t: "LIBERAR", a: "liberar"}, {t: "RECUSAR", a: "recusar"}].forEach(btnData => {
+        // Opções finais
+        const opt = [{t: "LIBERAR", a: "liberar"}, {t: "RECUSAR", a: "recusar"}];
+        opt.forEach(o => {
             const btn = document.createElement("button");
             btn.className = "btn-acao";
-            btn.innerText = btnData.t;
-            btn.onclick = () => processarDecisaoFinal(btnData.a);
+            btn.innerText = o.t;
+            btn.onclick = () => processarDecisaoFinal(o.a);
             painel.appendChild(btn);
         });
     }
 }
 
 function processarEscolhaPergunta(p) {
-    const caixaTexto = document.getElementById("sol-dialogo-texto");
-    typewriter(caixaTexto, `Você: ${p.textoBotao}\n\nNPC: "${p.respostaNpc}"`).then(() => {
+    typewriter(document.getElementById("sol-dialogo-texto"), `Você: ${p.textoBotao}\n\nNPC: "${p.respostaNpc}"`).then(() => {
         npcAtual.perguntas.splice(0, 2);
         renderizarPainelDinamico();
     });
@@ -552,51 +574,48 @@ function processarEscolhaPergunta(p) {
 
 function processarDecisaoFinal(acao) {
     document.getElementById("sol-painel-interacao").innerHTML = "";
-    const caixa = document.getElementById("sol-dialogo-texto");
+    const texto = acao === "liberar" ? npcAtual.reacaoAceito : npcAtual.reacaoRecusado;
     
-    if (acao === "liberar") {
-        typewriter(caixa, `[ PORTÃO MAGNÉTICO ABERTO ]\n\nNPC: "${npcAtual.reacaoAceito}"`);
-        gameState.insideObservatory.push({ id: npcAtual.id, nome: npcAtual.nomeReal, sprite: npcAtual.sprite, seguranca: npcAtual.seguranca });
-    } else {
-        typewriter(caixa, `[ DIRETRIZ DE ACESSO NEGADA ]\n\nNPC: "${npcAtual.reacaoRecusado}"`);
-        gameState.rejectedOutside.push(npcAtual.id);
-    }
-    gameState.filaDoDia.shift();
-    setTimeout(chamarProximoNpc, 3200);
+    typewriter(document.getElementById("sol-dialogo-texto"), `[ DIRETRIZ ${acao.toUpperCase()} ]\n\nNPC: "${texto}"`).then(() => {
+        if (acao === "liberar") {
+            gameState.insideObservatory.push({ id: npcAtual.id, nome: npcAtual.nomeReal });
+        } else {
+            gameState.rejectedOutside.push(npcAtual.id);
+        }
+        gameState.filaDoDia.shift();
+        setTimeout(chamarProximoNpc, 2000);
+    });
 }
 
-/* --- TERMINAL --- */
-async function iniciarAnimacaoTerminal() {
-    const logs = document.getElementById("terminal-logs");
-    logs.innerHTML = `<div class="terminal-header">Microsoft Windows [versão 10.0.26200.8655]<br>(c) Aethra Corporation. Todos os direitos reservados.</div>`;
+function iniciarAnimacaoTerminal() {
+    const logs = document.getElementById("tela-terminal");
+    logs.innerHTML = `
+        <div style="margin-bottom:10px;">
+            Microsoft Windows [versão 10.0.26200.8655]<br>
+            (c) Aethra Corporation. Todos os direitos reservados.
+        </div>
+        <div id="logs-area"></div>
+    `;
     renderizarInputTerminal();
 }
 
 function renderizarInputTerminal() {
-    const logs = document.getElementById("terminal-logs");
-    const id = Date.now();
-    logs.innerHTML += `<div>C:\\Users\\Operador> <input type="text" id="term-${id}" style="background:transparent; border:none; color:#8dff9a; font-family:inherit; outline:none;" autofocus></div>`;
-    
-    const input = document.getElementById(`term-${id}`);
+    const area = document.getElementById("logs-area");
+    area.innerHTML += `<div>C:\\Users\\Operador> <input type="text" id="term-input" autofocus style="background:transparent; border:none; color:inherit; font-family:inherit; width:60%; outline:none;"></div>`;
+    const input = document.getElementById("term-input");
     input.focus();
     
-    input.onkeydown = async (e) => {
+    input.onkeydown = (e) => {
         if (e.key === "Enter") {
             const cmd = input.value.trim().toLowerCase();
             input.disabled = true;
-            logs.innerHTML += `<div>C:\\Users\\Operador> ${cmd}</div>`;
+            area.innerHTML += `<div>C:\\Users\\Operador> ${cmd}</div>`;
             
-            if (cmd === "/help") {
-                logs.innerHTML += `<div>Comandos: /encerrarturno, /status</div>`;
-            } else if (cmd === "/encerrarturno") {
-                logs.innerHTML += `<div>Sincronizando...</div>`;
-                for(let i=1; i<=10; i++) {
-                    logs.innerHTML += `[${'#'.repeat(i)}${'.'.repeat(10-i)}] ${i*10}%<br>`;
-                    await new Promise(r => setTimeout(r, 200));
-                }
-                logs.innerHTML += `<div>> Sistema desconectado.</div>`;
+            if (cmd === "/encerrarturno") {
+                area.innerHTML += `<div>> Sincronizando...</div>`;
+                setTimeout(() => area.innerHTML += `<div>> TURNO ENCERRADO.</div>`, 1000);
             } else {
-                logs.innerHTML += `<div>Comando '${cmd}' não reconhecido.</div>`;
+                area.innerHTML += `<div>Comando '${cmd}' inválido.</div>`;
             }
             renderizarInputTerminal();
         }
