@@ -678,7 +678,7 @@ function renderizarInputTerminal(logs, delay) {
 
     // Renderiza o primeiro estado do painel dinâmico (com as duas primeiras perguntas)
     renderizarPainelDinamico();
-}
+
 
 // 4. Controla as renderizações com base no repositório de perguntas restante
 function renderizarPainelDinamico() {
