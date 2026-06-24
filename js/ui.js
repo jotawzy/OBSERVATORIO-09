@@ -523,42 +523,6 @@ document.addEventListener("click", (e) => {
     exibirDialogo(`"${npcAtual.dialogoInicial}"`, renderizarPainelDinamico);
 }
 
-function renderizarPainelDinamico() {
-    const painel = document.getElementById("sol-painel-interacao");
-    painel.innerHTML = "";
-
-    if (npcAtual.perguntas && npcAtual.perguntas.length >= 2) {
-        const pA = npcAtual.perguntas[0];
-        const pB = npcAtual.perguntas[1];
-
-        const btnA = document.createElement("button");
-        btnA.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 12px; font-size: 12px; cursor: pointer; font-family: monospace; text-align: left;";
-        btnA.innerHTML = `<iconify-icon icon="pixelarticons:message"></iconify-icon> ${pA.textoBotao}`;
-        btnA.addEventListener("click", () => processarEscolhaPergunta(pA));
-
-        const btnB = document.createElement("button");
-        btnB.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 12px; font-size: 12px; cursor: pointer; font-family: monospace; text-align: left;";
-        btnB.innerHTML = `<iconify-icon icon="pixelarticons:message"></iconify-icon> ${pB.textoBotao}`;
-        btnB.addEventListener("click", () => processarEscolhaPergunta(pB));
-
-        painel.appendChild(btnA);
-        painel.appendChild(btnB);
-    } else {
-        const btnLiberar = document.createElement("button");
-        btnLiberar.style.cssText = "background: #15331b; border: 1px solid #385e40; color: #8dff9a; padding: 15px; cursor: pointer; font-family: monospace; font-size: 13px; font-weight: bold;";
-        btnLiberar.innerHTML = `<iconify-icon icon="pixelarticons:check" style="font-size: 16px; vertical-align: middle;"></iconify-icon> LIBERAR PORTÃO`;
-        btnLiberar.addEventListener("click", () => processarDecisaoFinal("liberar"));
-
-        const btnMandarEmbora = document.createElement("button");
-        btnMandarEmbora.style.cssText = "background: #331515; border: 1px solid #5e3838; color: #ff8d8d; padding: 15px; cursor: pointer; font-family: monospace; font-size: 13px; font-weight: bold;";
-        btnMandarEmbora.innerHTML = `<iconify-icon icon="pixelarticons:close" style="font-size: 16px; vertical-align: middle;"></iconify-icon> MANDAR EMBORA`;
-        btnMandarEmbora.addEventListener("click", () => processarDecisaoFinal("recusar"));
-
-        painel.appendChild(btnLiberar);
-        painel.appendChild(btnMandarEmbora);
-    }
-}
-
 function processarEscolhaPergunta(pergunta) {
     npcAtual.perguntas.splice(0, 2);
     // Toca o diálogo da resposta. Quando terminar de clicar, renderiza os botões novamente.
