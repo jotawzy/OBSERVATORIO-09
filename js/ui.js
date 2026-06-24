@@ -1,4 +1,5 @@
 import { characterDatabase } from './database/characters.js';
+import { documentsDatabase } from './database/documents.js';
 
 const EmailsDatabase = [
     {
@@ -351,100 +352,298 @@ document.addEventListener("click", (e) => {
    APLICATIVO: SOLICITAÇÕES
    ========================================================================== */
 
-// Variáveis de controle locais para o funcionamento do app ativo
 let npcAtual = null;
+let paginasDialogo = [];
+let paginaAtualIdx = 0;
+let acaoPosDialogo = null;
 
-// 1. Função para sortear 4 a 5 NPCs aleatórios no início do dia
 function iniciarFilaDoDia() {
     const todosIds = Object.keys(characterDatabase);
-    
-    // Sorteia uma quantidade entre 4 e 5
     const quantidade = Math.floor(Math.random() * 2) + 4; 
-    
-    // Embaralha os IDs disponíveis e pega a quantidade sorteada
     const embaralhado = todosIds.sort(() => 0.5 - Math.random());
     gameState.filaDoDia = embaralhado.slice(0, quantidade);
 }
 
-// 2. Cria ou abre a janela do aplicativo de solicitações
 function criarJanelaSolicitacoes() {
-    // Se a fila do dia estiver completamente vazia, gera uma nova
     if (gameState.filaDoDia.length === 0 && gameState.insideObservatory.length === 0 && gameState.rejectedOutside.length === 0) {
         iniciarFilaDoDia();
     }
 
-    const idJanela = criarJanelaSimples("Controle de Acesso - Portão", `
+    criarJanelaSimples("Controle de Acesso", `
         <div class="solicitacoes-layout" style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
             
-            <div style="display: flex; flex: 1; min-height: 200px; border-bottom: 1px solid #26422c;">
-                <div id="sol-item-container" style="width: 50%; border-right: 1px solid #26422c; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b100c; padding: 10px;">
-                    <div id="sol-item-visor" style="font-size: 50px; filter: drop-shadow(0 0 10px rgba(141,255,154,0.2));"></div>
-                    <small id="sol-item-nome" style="font-size: 10px; opacity: 0.6; margin-top: 5px; text-align:center;"></small>
+            <!-- ÁREA SUPERIOR: MESA DE INSPEÇÃO (50%) -->
+            <div id="area-mesa-trabalho" style="display: flex; height: 50%; border-bottom: 2px solid #26422c;">
+                <!-- ESQUERDA: ITEM -->
+                <div id="sol-item-container" style="width: 50%; border-right: 2px solid #26422c; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b100c;">
+                    <iconify-icon id="sol-item-visor" icon="" style="font-size: 60px; color: #8dff9a; filter: drop-shadow(0 0 10px rgba(141,255,154,0.2));"></iconify-icon>
+                    <small id="sol-item-nome" style="font-size: 12px; opacity: 0.6; margin-top: 10px; text-align:center; color: #8dff9a; font-family: monospace; text-transform: uppercase;"></small>
                 </div>
                 
+                <!-- DIREITA: NPC -->
                 <div style="width: 50%; display: flex; align-items: center; justify-content: center; background: #0f1411; position: relative;">
-                    <div id="sol-npc-sprite" style="font-size: 80px; filter: drop-shadow(0 0 15px rgba(141,255,154,0.3)); animation: pulse 2s infinite;">👤</div>
-                    <div style="position: absolute; top: 10px; right: 10px; font-size: 10px; background: #1a1010; color: #ff8d8d; padding: 2px 6px; border: 1px solid #422626;" id="sol-badge-status">DESCONHECIDO</div>
+                    <iconify-icon id="sol-npc-sprite" icon="pixelarticons:user" style="font-size: 90px; color: #8dff9a; filter: drop-shadow(0 0 15px rgba(141,255,154,0.3));"></iconify-icon>
+                    <div style="position: absolute; top: 10px; right: 10px; font-size: 11px; background: #1a1010; color: #ff8d8d; padding: 4px 8px; border: 1px solid #422626; font-family: monospace;" id="sol-badge-status">DESCONHECIDO</div>
                 </div>
             </div>
 
-            <div style="background: #0d120e; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <div id="sol-dialogo-texto" style="font-size: 12px; line-height: 1.4; min-height: 55px; color: #c4ffd0; border-left: 3px solid #385e40; padding-left: 10px; white-space: pre-line;">
-                    Aguardando sinal do portão externo...
+            <!-- ÁREA INFERIOR: PAINEL DE COMUNICAÇÃO DIVIDIDO EM COLUNAS (50%) -->
+            <div id="area-painel-inferior" style="height: 50%; background: #0d120e; padding: 15px; display: flex; gap: 15px;">
+                
+                <!-- COLUNA ESQUERDA: CAIXA DE DIÁLOGO GIGANTE -->
+                <div id="caixa-dialogo-clicavel" style="flex: 2; background: #050806; border: 1px solid #385e40; padding: 15px; position: relative; cursor: pointer; display: flex; flex-direction: column;">
+                    <div id="sol-dialogo-texto" style="font-size: 18px; color: #c4ffd0; font-family: monospace; line-height: 1.6; flex: 1;">
+                        Sincronizando feed de áudio...
+                    </div>
+                    <div id="indicador-clique" style="font-size: 12px; color: #8dff9a; text-align: right; margin-top: 10px; display: none;">▼ CLIQUE PARA CONTINUAR ▼</div>
                 </div>
 
-                <div id="sol-painel-interacao" style="display: flex; flex-direction: column; gap: 5px;">
-                    </div>
+                <!-- COLUNA DIREITA: BOTÕES DE AÇÃO -->
+                <div id="sol-painel-interacao" style="flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+                    <!-- Botões entram aqui quando o diálogo acaba -->
+                </div>
             </div>
 
         </div>
     `, "solicitacoes");
 
-    // Prepara e joga na tela o primeiro NPC ou o Terminal caso a fila tenha acabado
     chamarProximoNpc();
 }
 
-// 3. Puxa o próximo NPC da fila ou transforma o painel em Terminal de Comando
-function chamarProximoNpc() {
+// ==========================================
+// MÁQUINA DE TEXTO E PAGINAÇÃO
+// ==========================================
+function exibirDialogo(texto, callbackBotoes) {
+    // Quebra o texto em páginas de aprox. 140 caracteres respeitando palavras inteiras
+    const maxLen = 140;
+    const palavras = texto.split(' ');
+    paginasDialogo = [];
+    let pagAtual = "";
+
+    palavras.forEach(palavra => {
+        if ((pagAtual.length + palavra.length) > maxLen) {
+            paginasDialogo.push(pagAtual.trim());
+            pagAtual = palavra + " ";
+        } else {
+            pagAtual += palavra + " ";
+        }
+    });
+    if (pagAtual.trim().length > 0) paginasDialogo.push(pagAtual.trim());
+
+    paginaAtualIdx = 0;
+    acaoPosDialogo = callbackBotoes;
+    
+    // Oculta os botões enquanto o diálogo acontece
+    document.getElementById("sol-painel-interacao").innerHTML = ""; 
+    renderizarPaginaDialogo();
+}
+
+function renderizarPaginaDialogo() {
+    document.getElementById("sol-dialogo-texto").innerText = paginasDialogo[paginaAtualIdx];
+    
+    // Mostra a setinha apenas se houver mais páginas ou botões a carregar
+    const indicador = document.getElementById("indicador-clique");
+    if (paginaAtualIdx < paginasDialogo.length - 1 || acaoPosDialogo) {
+        indicador.style.display = "block";
+    } else {
+        indicador.style.display = "none";
+    }
+}
+
+// Ouve cliques SOMENTE na caixa de diálogo do aplicativo de solicitações
+document.addEventListener("click", (e) => {
+    const caixaClicavel = e.target.closest("#caixa-dialogo-clicavel");
+    if (caixaClicavel && paginasDialogo.length > 0) {
+        if (paginaAtualIdx < paginasDialogo.length - 1) {
+            paginaAtualIdx++;
+            renderizarPaginaDialogo();
+        } else {
+            // Fim do diálogo! Limpa as páginas e mostra os botões.
+            document.getElementById("indicador-clique").style.display = "none";
+            paginasDialogo = [];
+            if (acaoPosDialogo) {
+                acaoPosDialogo();
+                acaoPosDialogo = null; // Consume o callback para não repetir
+            }
+        }
+    }
+});
+
+// ==========================================
+// FLUXO DO NPC E TERMINAL
+// ==========================================
+    function chamarProximoNpc() {
     const proximoId = gameState.filaDoDia[0];
 
-    // ==========================================
-    // ESTADO: TURNO TERMINOU -> TRANSMUTA EM TERMINAL
-    // ==========================================
+    // MODO TERMINAL DE PC ANTIGO (Se não houver mais ninguém na fila)
     if (!proximoId) {
-        document.getElementById("sol-npc-sprite").innerText = "🖥️";
-        document.getElementById("sol-badge-status").innerText = "SISTEMA SEGURO";
-        document.getElementById("sol-item-visor").innerText = "⚙️";
-        document.getElementById("sol-item-nome").innerText = "Console Central";
-        
-        document.getElementById("sol-dialogo-texto").innerText = `[ SISTEMA ]\nExpediente de triagem encerrado. Portões magnéticos trancados.\n\nDigite /encerrarturno no terminal abaixo para consolidar os logs de segurança e acessar o mapa da cidade.`;
-
-        const painel = document.getElementById("sol-painel-interacao");
-        painel.innerHTML = `
-            <div style="display: flex; align-items: center; background: #050806; padding: 8px; border: 1px solid #26422c; gap: 5px;">
-                <span style="font-size: 11px; color: #8dff9a; font-family: monospace; white-space: nowrap;">OBSERVATORIO_9_></span>
-                <input type="text" id="terminal-input" placeholder="Digite um comando..." autofocus style="background: transparent; border: none; color: #8dff9a; font-family: monospace; font-size: 11px; outline: none; flex: 1;">
+        const layout = document.querySelector(".solicitacoes-layout");
+        layout.innerHTML = `
+            <style>
+                @keyframes blinker { 50% { opacity: 0; } }
+                .cursor-blink { animation: blinker 1s linear infinite; display: inline-block; width: 8px; height: 14px; background: #8dff9a; vertical-align: middle; }
+            </style>
+            <div id="tela-terminal" style="background: #020503; color: #8dff9a; padding: 25px; font-family: monospace; font-size: 14px; height: 100%; overflow-y: auto; box-shadow: inset 0 0 50px rgba(0,255,0,0.05);">
+                <div id="terminal-logs"></div>
             </div>
         `;
-
-        const input = document.getElementById("terminal-input");
-        input.focus();
-        
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                const comando = input.value.trim();
-                if (comando === "/encerrarturno") {
-                    document.getElementById("sol-dialogo-texto").innerText = `[ SISTEMA ]\nDesconectando terminal... Deslocando monitor para o alojamento civil da cidade.\n\n(A transição para a cidade iniciará aqui na próxima etapa do projeto!)`;
-                    painel.innerHTML = `<div style="font-size:10px; color:#ff8d8d; text-align:center; padding:5px; font-family: monospace;">[ TERMINAL DESCONECTADO COM SUCESSO ]</div>`;
-                } else {
-                    document.getElementById("sol-dialogo-texto").innerText = `[ ERRO DE DIRETRIZ ]\nComando "${comando}" inválido.\n\nPara prosseguir para os setores externos da cidade, insira exatamente o comando: /encerrarturno`;
-                    input.value = "";
-                }
-            }
-        });
+        iniciarAnimacaoTerminal();
         return;
     }
 
+    // MODO INSPEÇÃO NORMAL
+    const npcOriginal = characterDatabase[proximoId];
+    npcAtual = { 
+        ...npcOriginal, 
+        perguntas: [...npcOriginal.perguntas] 
+    };
+
+    document.getElementById("sol-npc-sprite").setAttribute("icon", npcAtual.sprite);
+    document.getElementById("sol-badge-status").innerText = "RETIDO";
+
+    const itemVisor = document.getElementById("sol-item-visor");
+    const itemNome = document.getElementById("sol-item-nome");
+
+    if (npcAtual.itensTrazidos && npcAtual.itensTrazidos.length > 0) {
+        const idItem = npcAtual.itensTrazidos[0];
+        const dadosItem = documentsDatabase[idItem]; // Usando o seu database correto
+        if (dadosItem) {
+            itemVisor.setAttribute("icon", dadosItem.icone);
+            itemNome.innerText = dadosItem.nome;
+            if (!gameState.unlockedFiles.includes(idItem)) {
+                gameState.unlockedFiles.push(idItem);
+            }
+        }
+    } else {
+        itemVisor.setAttribute("icon", "pixelarticons:folder");
+        itemNome.innerText = "NENHUM DOCUMENTO";
+    }
+
+    // Dispara o diálogo inicial e renderiza os botões após a animação de texto
+    exibirDialogo(`"${npcAtual.dialogoInicial}"`, renderizarPainelDinamico);
+}
+
+function renderizarPainelDinamico() {
+    const painel = document.getElementById("sol-painel-interacao");
+    painel.innerHTML = "";
+
+    if (npcAtual.perguntas && npcAtual.perguntas.length >= 2) {
+        const pA = npcAtual.perguntas[0];
+        const pB = npcAtual.perguntas[1];
+
+        const btnA = document.createElement("button");
+        btnA.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 12px; font-size: 12px; cursor: pointer; font-family: monospace; text-align: left;";
+        btnA.innerHTML = `<iconify-icon icon="pixelarticons:message"></iconify-icon> ${pA.textoBotao}`;
+        btnA.addEventListener("click", () => processarEscolhaPergunta(pA));
+
+        const btnB = document.createElement("button");
+        btnB.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 12px; font-size: 12px; cursor: pointer; font-family: monospace; text-align: left;";
+        btnB.innerHTML = `<iconify-icon icon="pixelarticons:message"></iconify-icon> ${pB.textoBotao}`;
+        btnB.addEventListener("click", () => processarEscolhaPergunta(pB));
+
+        painel.appendChild(btnA);
+        painel.appendChild(btnB);
+    } else {
+        const btnLiberar = document.createElement("button");
+        btnLiberar.style.cssText = "background: #15331b; border: 1px solid #385e40; color: #8dff9a; padding: 15px; cursor: pointer; font-family: monospace; font-size: 13px; font-weight: bold;";
+        btnLiberar.innerHTML = `<iconify-icon icon="pixelarticons:check" style="font-size: 16px; vertical-align: middle;"></iconify-icon> LIBERAR PORTÃO`;
+        btnLiberar.addEventListener("click", () => processarDecisaoFinal("liberar"));
+
+        const btnMandarEmbora = document.createElement("button");
+        btnMandarEmbora.style.cssText = "background: #331515; border: 1px solid #5e3838; color: #ff8d8d; padding: 15px; cursor: pointer; font-family: monospace; font-size: 13px; font-weight: bold;";
+        btnMandarEmbora.innerHTML = `<iconify-icon icon="pixelarticons:close" style="font-size: 16px; vertical-align: middle;"></iconify-icon> MANDAR EMBORA`;
+        btnMandarEmbora.addEventListener("click", () => processarDecisaoFinal("recusar"));
+
+        painel.appendChild(btnLiberar);
+        painel.appendChild(btnMandarEmbora);
+    }
+}
+
+function processarEscolhaPergunta(pergunta) {
+    npcAtual.perguntas.splice(0, 2);
+    // Toca o diálogo da resposta. Quando terminar de clicar, renderiza os botões novamente.
+    exibirDialogo(`Você: ${pergunta.textoBotao}\n\nNPC: "${pergunta.respostaNpc}"`, renderizarPainelDinamico);
+}
+
+function processarDecisaoFinal(acao) {
+    const painel = document.getElementById("sol-painel-interacao");
+    painel.innerHTML = ""; 
+
+    let mensagemDesfecho = "";
+    if (acao === "liberar") {
+        mensagemDesfecho = `[ PORTÃO MAGNÉTICO ABERTO ]\n\nNPC: "${npcAtual.reacaoAceito}"`;
+        gameState.insideObservatory.push({ id: npcAtual.id, nome: npcAtual.nomeReal, sprite: npcAtual.sprite, seguranca: npcAtual.seguranca });
+    } else {
+        mensagemDesfecho = `[ DIRETRIZ DE ACESSO NEGADA ]\n\nNPC: "${npcAtual.reacaoRecusado}"`;
+        gameState.rejectedOutside.push(npcAtual.id);
+    }
+
+    gameState.filaDoDia.shift(); 
+    
+    // O jogador lê o desfecho no seu próprio tempo. Só puxa o próximo NPC quando ele clicar até o fim.
+    exibirDialogo(mensagemDesfecho, chamarProximoNpc);
+}
+
+// ==========================================
+// ANIMAÇÃO DO TERMINAL (FIM DE TURNO)
+// ==========================================
+async function iniciarAnimacaoTerminal() {
+    const logs = document.getElementById("terminal-logs");
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    logs.innerHTML += "<div>> INICIALIZANDO CONSOLE CENTRAL... <span class='cursor-blink'></span></div>";
+    await delay(1200);
+    logs.innerHTML = logs.innerHTML.replace("<span class='cursor-blink'></span>", "");
+    logs.innerHTML += "<div>> CARREGANDO MÓDULOS DE VÍDEO... [ <span style='color:#a6d9b0'>OK</span> ]</div>";
+    await delay(400);
+    logs.innerHTML += "<div>> PORTÕES MAGNÉTICOS... [ <span style='color:#ff8d8d'>TRANCADOS</span> ]</div>";
+    await delay(600);
+    logs.innerHTML += "<div><br>> Expediente externo encerrado. Aguardando comando de consolidação de turno.</div>";
+    
+    renderizarInputTerminal(logs, delay);
+}
+
+function renderizarInputTerminal(logs, delay) {
+    const idUnico = Date.now();
+    logs.innerHTML += `
+        <div style="display: flex; margin-top: 15px; align-items: center;" id="linha-input-${idUnico}">
+            <span>OBSERVATORIO_9_$ </span>
+            <input type="text" id="terminal-input-${idUnico}" autofocus autocomplete="off" spellcheck="false" style="background: transparent; border: none; color: #8dff9a; font-family: monospace; font-size: 14px; outline: none; margin-left: 10px; flex: 1;">
+        </div>
+    `;
+
+    const input = document.getElementById(`terminal-input-${idUnico}`);
+    // Garante que o input mantenha o foco
+    document.getElementById("tela-terminal").onclick = () => input.focus();
+    input.focus();
+    
+    input.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+            const cmd = input.value.trim();
+            input.disabled = true; 
+            
+            if (cmd === "/encerrarturno") {
+                logs.innerHTML += `<div><br>> OBSERVATORIO_9_$ ${cmd}</div>`;
+                logs.innerHTML += `<div>> SINCRONIZANDO DADOS DO SERVIDOR... <span class='cursor-blink'></span></div>`;
+                await delay(1500);
+                logs.innerHTML = logs.innerHTML.replace("<span class='cursor-blink'></span>", "");
+                
+                for(let i=1; i<=4; i++){
+                    logs.innerHTML += `<div>> COMPACTANDO BLOCO 0x0A9${i}... <span style="color:#a6d9b0">SUCESSO</span></div>`;
+                    await delay(300);
+                }
+                logs.innerHTML += `<div><br>> <span style="color:#ff8d8d; animation: blinker 1s linear infinite;">DESCONECTANDO OPERADOR...</span></div>`;
+                await delay(2000);
+                logs.innerHTML += `<div><br>> MUDANÇA DE SETOR AUTORIZADA. (O mapa da cidade iniciará aqui na próxima versão).</div>`;
+            } else {
+                logs.innerHTML += `<div>> OBSERVATORIO_9_$ ${cmd}</div>`;
+                logs.innerHTML += `<div style="color: #ff8d8d;">> ERRO: Comando inválido. Digite /encerrarturno</div>`;
+                document.getElementById(`linha-input-${idUnico}`).style.display = 'none'; // Esconde o input antigo
+                renderizarInputTerminal(logs, delay); // Gera uma nova linha de comando embaixo
+            }
+        }
+    });
+}
     // ==========================================
     // ESTADO: CONFIGURAÇÃO DE NOVO NPC NA FILA
     // ==========================================
@@ -471,7 +670,7 @@ function chamarProximoNpc() {
             }
         }
     } else {
-        itemVisor.innerText = "📁";
+        itemVisor.innerText = "";
         itemNome.innerText = "Nenhum documento na bandeja";
     }
 
@@ -493,12 +692,12 @@ function renderizarPainelDinamico() {
 
         const btnA = document.createElement("button");
         btnA.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 7px 10px; font-size: 11px; text-align: left; cursor: pointer; font-family: monospace;";
-        btnA.innerText = `💬 ${perguntaA.textoBotao}`;
+        btnA.innerText = `${perguntaA.textoBotao}`;
         btnA.addEventListener("click", () => processarEscolhaPergunta(perguntaA));
 
         const btnB = document.createElement("button");
         btnB.style.cssText = "background: #111a13; border: 1px solid #233827; color: #a6d9b0; padding: 7px 10px; font-size: 11px; text-align: left; cursor: pointer; font-family: monospace;";
-        btnB.innerText = `💬 ${perguntaB.textoBotao}`;
+        btnB.innerText = `${perguntaB.textoBotao}`;
         btnB.addEventListener("click", () => processarEscolhaPergunta(perguntaB));
 
         painel.appendChild(btnA);
@@ -507,12 +706,12 @@ function renderizarPainelDinamico() {
         // Se as perguntas acabaram completamente, transmuta para os 2 botões de veredito
         const btnLiberar = document.createElement("button");
         btnLiberar.style.cssText = "background: #15331b; border: 1px solid #385e40; color: #8dff9a; padding: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; font-size: 11px; font-family: monospace; letter-spacing: 1px;";
-        btnLiberar.innerText = "🔓 Liberar Portão";
+        btnLiberar.innerText = "Liberar Portão";
         btnLiberar.addEventListener("click", () => processarDecisaoFinal("liberar"));
 
         const btnMandarEmbora = document.createElement("button");
         btnMandarEmbora.style.cssText = "background: #331515; border: 1px solid #5e3838; color: #ff8d8d; padding: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; font-size: 11px; font-family: monospace; letter-spacing: 1px;";
-        btnMandarEmbora.innerText = "❌ Mandar Embora";
+        btnMandarEmbora.innerText = "Mandar Embora";
         btnMandarEmbora.addEventListener("click", () => processarDecisaoFinal("recusar"));
 
         painel.appendChild(btnLiberar);

@@ -228,7 +228,7 @@ EMAIL SYSTEM
     opacity: 0.5;
 }
 
-
+/* Solicitações */
 .solicitacoes-layout{
     width: 100%;
     height: 100%;
@@ -259,7 +259,7 @@ EMAIL SYSTEM
 }
 
 .npc-sprite{
-    font-size: 80px;
+    font-size: 90px;
     filter: drop-shadow(0 0 10px rgba(120,255,120,.3));
 }
 
@@ -278,6 +278,7 @@ EMAIL SYSTEM
     border: 1px solid #26422c;
     background: #0f1f14;
     overflow: auto;
+    font-size: 25px;
 }
 
 .dialogo-opcoes{
@@ -292,6 +293,7 @@ EMAIL SYSTEM
     color: #c6ffd0;
     padding: 10px;
     cursor: pointer;
+    font-size: 25px;
 }
 
 .fullscreen{
@@ -341,7 +343,7 @@ EMAIL SYSTEM
     margin-top: 20px;
 }
 
-/* ITEM FUTURO (já pronto pra usar depois) */
+/* ITEM FUTURO */
 .arquivo-item{
     padding: 8px;
     margin-bottom: 6px;
