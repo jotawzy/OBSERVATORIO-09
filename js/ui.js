@@ -474,67 +474,109 @@ document.addEventListener("click", (e) => {
 // ==========================================
 
 let isTyping = false;
-let currentFullText = "";
+let typingTimeout = null;
 
+// --- EFEITO DE ESCRITA (Pode pular ao clicar) ---
 async function typewriter(element, text) {
     isTyping = true;
-    currentFullText = text;
-    element.innerText = ""; // Limpa texto anterior
+    element.innerText = "";
     
-    for (let char of text) {
+    for (let i = 0; i < text.length; i++) {
         if (!isTyping) {
-            element.innerText = text;
+            element.innerText = text; // Pula a animação instantaneamente
             return;
         }
-        element.innerText += char;
+        element.innerText += text[i];
         await new Promise(r => setTimeout(r, 20));
     }
     isTyping = false;
 }
 
-// Evento global para pular texto
+// Clicar no texto pula a animação
 document.getElementById("sol-dialogo-texto").onclick = () => {
-    if (isTyping) {
-        isTyping = false; 
-    }
+    if (isTyping) isTyping = false;
 };
 
+// --- TERMINAL ---
+function iniciarAnimacaoTerminal() {
+    const terminal = document.getElementById("tela-terminal");
+    terminal.innerHTML = `
+        <div style="margin-bottom:10px;">OBSERVATORIO OS [versão 2.4.0]</div>
+        <div id="terminal-logs"></div>
+    `;
+    renderizarPrompt();
+}
+
+function renderizarPrompt() {
+    const logs = document.getElementById("terminal-logs");
+    logs.innerHTML += `<div>OBSERVATORIO_OS:> <input type="text" id="term-input" autofocus style="background:transparent; border:none; color:inherit; font-family:inherit; width:60%; outline:none;"></div>`;
+    
+    const input = document.getElementById("term-input");
+    input.focus();
+    
+    input.onkeydown = async (e) => {
+        if (e.key === "Enter") {
+            const cmd = input.value.trim().toLowerCase();
+            input.disabled = true;
+            logs.innerHTML += `<div>OBSERVATORIO_OS:> ${cmd}</div>`;
+            await executarComando(cmd);
+            renderizarPrompt();
+        }
+    };
+}
+
+async function executarComando(cmd) {
+    const logs = document.getElementById("terminal-logs");
+    const comandos = {
+        "/help": "COMANDOS: /help, /status, /encerrarturno",
+        "/status": "SISTEMA OPERACIONAL ESTÁVEL. PORTÕES MAGNÉTICOS EM ESPERA.",
+        "/encerrarturno": "INICIANDO SINCRONIZAÇÃO..."
+    };
+
+    if (comandos[cmd]) {
+        if (cmd === "/encerrarturno") {
+            logs.innerHTML += `<div>> Sincronizando dados...</div>`;
+            await new Promise(r => setTimeout(r, 1000));
+            logs.innerHTML += `<div>> TURNO ENCERRADO COM SUCESSO.</div>`;
+        } else {
+            logs.innerHTML += `<div>${comandos[cmd]}</div>`;
+        }
+    } else {
+        logs.innerHTML += `<div>ERRO: Comando '${cmd}' não reconhecido.</div>`;
+    }
+}
+
+// --- LÓGICA DE NPCS (Busca direto no Database) ---
 function chamarProximoNpc() {
     const proximoId = gameState.filaDoDia[0];
 
-    // Se a fila acabou, abre o terminal
     if (!proximoId) {
-        const layout = document.querySelector(".solicitacoes-layout");
-        layout.innerHTML = `<div id="tela-terminal" style="padding: 20px;"></div>`;
+        document.querySelector(".solicitacoes-layout").innerHTML = `<div id="tela-terminal"></div>`;
         iniciarAnimacaoTerminal();
         return;
     }
 
     const npc = characterDatabase[proximoId];
-    if (!npc) return; // Segurança
-
     npcAtual = { ...npc, perguntas: [...npc.perguntas] };
 
-    // Atualiza dados
+    // Atualiza elementos visuais (sprites dinâmicas)
     document.getElementById("sol-npc-sprite").innerText = npcAtual.sprite;
-    document.getElementById("sol-badge-status").innerText = npcAtual.seguranca || "RETIDO";
+    document.getElementById("sol-badge-status").innerText = npcAtual.seguranca;
 
+    // Documentos dinâmicos
     const itemVisor = document.getElementById("sol-item-visor");
     const itemNome = document.getElementById("sol-item-nome");
-
-    // Lógica de Documentos
+    
     if (npcAtual.itensTrazidos?.length > 0) {
-        const docId = npcAtual.itensTrazidos[0];
-        // Certifique-se que documentsDatabase existe no escopo global
-        const doc = typeof documentsDatabase !== 'undefined' ? documentsDatabase[docId] : null;
+        const doc = documentsDatabase[npcAtual.itensTrazidos[0]];
         itemVisor.innerText = doc ? doc.icone : "📁";
         itemNome.innerText = doc ? doc.nome : "DOC DESCONHECIDO";
     } else {
         itemVisor.innerText = "✖";
-        itemNome.innerText = "NENHUM DOCUMENTO";
+        itemNome.innerText = "SEM DOCUMENTO";
     }
 
-    // Escreve o texto inicial
+    // Diálogo limpo
     typewriter(document.getElementById("sol-dialogo-texto"), npcAtual.dialogoInicial).then(() => {
         renderizarPainelDinamico();
     });
@@ -549,75 +591,33 @@ function renderizarPainelDinamico() {
             const btn = document.createElement("button");
             btn.className = "btn-acao";
             btn.innerText = p.textoBotao;
-            btn.onclick = () => processarEscolhaPergunta(p);
+            btn.onclick = () => {
+                // Diálogo limpo sem prefixos
+                typewriter(document.getElementById("sol-dialogo-texto"), p.respostaNpc).then(() => {
+                    npcAtual.perguntas.splice(0, 2);
+                    renderizarPainelDinamico();
+                });
+            };
             painel.appendChild(btn);
         });
     } else {
-        // Opções finais
-        const opt = [{t: "LIBERAR", a: "liberar"}, {t: "RECUSAR", a: "recusar"}];
-        opt.forEach(o => {
+        const opcoes = [{t: "LIBERAR", a: "liberar"}, {t: "RECUSAR", a: "recusar"}];
+        opcoes.forEach(op => {
             const btn = document.createElement("button");
             btn.className = "btn-acao";
-            btn.innerText = o.t;
-            btn.onclick = () => processarDecisaoFinal(o.a);
+            btn.innerText = op.t;
+            btn.onclick = () => processarDecisaoFinal(op.a);
             painel.appendChild(btn);
         });
     }
-}
-
-function processarEscolhaPergunta(p) {
-    typewriter(document.getElementById("sol-dialogo-texto"), `Você: ${p.textoBotao}\n\nNPC: "${p.respostaNpc}"`).then(() => {
-        npcAtual.perguntas.splice(0, 2);
-        renderizarPainelDinamico();
-    });
 }
 
 function processarDecisaoFinal(acao) {
     document.getElementById("sol-painel-interacao").innerHTML = "";
     const texto = acao === "liberar" ? npcAtual.reacaoAceito : npcAtual.reacaoRecusado;
     
-    typewriter(document.getElementById("sol-dialogo-texto"), `[ DIRETRIZ ${acao.toUpperCase()} ]\n\nNPC: "${texto}"`).then(() => {
-        if (acao === "liberar") {
-            gameState.insideObservatory.push({ id: npcAtual.id, nome: npcAtual.nomeReal });
-        } else {
-            gameState.rejectedOutside.push(npcAtual.id);
-        }
+    typewriter(document.getElementById("sol-dialogo-texto"), texto).then(() => {
         gameState.filaDoDia.shift();
         setTimeout(chamarProximoNpc, 2000);
     });
-}
-
-function iniciarAnimacaoTerminal() {
-    const logs = document.getElementById("tela-terminal");
-    logs.innerHTML = `
-        <div style="margin-bottom:10px;">
-            Microsoft Windows [versão 10.0.26200.8655]<br>
-            (c) Aethra Corporation. Todos os direitos reservados.
-        </div>
-        <div id="logs-area"></div>
-    `;
-    renderizarInputTerminal();
-}
-
-function renderizarInputTerminal() {
-    const area = document.getElementById("logs-area");
-    area.innerHTML += `<div>C:\\Users\\Operador> <input type="text" id="term-input" autofocus style="background:transparent; border:none; color:inherit; font-family:inherit; width:60%; outline:none;"></div>`;
-    const input = document.getElementById("term-input");
-    input.focus();
-    
-    input.onkeydown = (e) => {
-        if (e.key === "Enter") {
-            const cmd = input.value.trim().toLowerCase();
-            input.disabled = true;
-            area.innerHTML += `<div>C:\\Users\\Operador> ${cmd}</div>`;
-            
-            if (cmd === "/encerrarturno") {
-                area.innerHTML += `<div>> Sincronizando...</div>`;
-                setTimeout(() => area.innerHTML += `<div>> TURNO ENCERRADO.</div>`, 1000);
-            } else {
-                area.innerHTML += `<div>Comando '${cmd}' inválido.</div>`;
-            }
-            renderizarInputTerminal();
-        }
-    };
 }

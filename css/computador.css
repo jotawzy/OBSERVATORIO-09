@@ -389,7 +389,23 @@ EMAIL SYSTEM
     color: #020503; }
 
 #sol-dialogo-texto {
-    cursor: pointer; 
-    white-space: pre-wrap; 
-    min-height: 80px; 
+    cursor: pointer;
+    min-height: 80px;
+    white-space: pre-line;
 }
+
+#tela-terminal {
+    font-family: 'Silkscreen', cursive;
+    color: #8dff9a;
+    padding: 20px;
+}
+
+.terminal-cursor {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background: #8dff9a;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }

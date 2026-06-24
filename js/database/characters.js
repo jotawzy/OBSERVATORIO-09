@@ -4,7 +4,7 @@ export const characterDatabase = {
     "char_001": {
         id: "char_001",
         nomeReal: "Alana Rocha",
-        sprite: "👩‍🌾",
+        sprite: "assets/alana-rocha.png",
         seguranca: "Seguro",
         dialogoInicial: "Por favor, senhor... Venho do Setor Agrícola. Minha estufa foi invadida e eu só preciso de um lugar seguro para passar a noite. Eu trouxe minha Identidade Civil Oficial. Está tudo em ordem, juro!",
         
