@@ -355,3 +355,25 @@ EMAIL SYSTEM
 .arquivo-item:hover{
     background: #16201b;
 }
+
+/* computador.css */
+#tela-terminal, #sol-dialogo-texto {
+    font-family: 'Silkscreen', cursive;
+    color: #8dff9a;
+    background: transparent;
+}
+
+.terminal-header { margin-bottom: 15px; border-bottom: 1px solid #8dff9a; }
+.cursor-block { 
+    display: inline-block; width: 10px; height: 18px; 
+    background: #8dff9a; animation: blink 1s step-end infinite; 
+    vertical-align: middle; 
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.btn-acao {
+    background: #111a13; border: 1px solid #8dff9a; color: #8dff9a;
+    padding: 10px; cursor: pointer; font-family: 'Silkscreen', cursive;
+    margin: 5px;
+}
+.btn-acao:hover { background: #8dff9a; color: #020503; }
